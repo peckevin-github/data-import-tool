@@ -510,10 +510,10 @@
                     <div class="help-content p-4 pt-0">
                         <ul class="text-sm text-blue-700 space-y-1 mb-3">
                             <li>• <strong>Each row</strong> represents one product set and its member products</li>
-                            <li>• <strong>Product Set ID</strong> (Column A) and <strong>Name</strong> (Column B) are required</li>
-                            <li>• <strong>onlineFlag</strong> (Column C) and <strong>searchableFlag</strong> (Column D) are optional (accepts true/false/yes/no/1/0)</li>
-                            <li>• <strong>Custom attributes</strong> (if any) appear in columns after the flags</li>
-                            <li>• <strong>Product IDs</strong> appear in remaining columns - up to 100 products per set</li>
+                            <li>• <strong>Product Set ID</strong> (Column A) is required</li>
+                            <li>• <strong>Standard attributes</strong> can be selected from the checkboxes (e.g., displayName, onlineFlag, searchableFlag, brand, etc.)</li>
+                            <li>• <strong>Custom attributes</strong> (if any) can be added using the table</li>
+                            <li>• <strong>Variant Product IDs</strong> appear in the final columns - up to 100 products per set</li>
                         </ul>
                         <div class="bg-white p-3 rounded border border-blue-200">
                             <p class="text-xs font-semibold text-blue-900 mb-1">💡 Tip</p>
@@ -785,7 +785,9 @@
             <div id="product-sets-section" class="mb-6 hidden">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div>
-                        <h3 class="text-xl font-semibold mb-4 text-slate-900 border-b pb-2">Custom Attributes</h3>
+                        <h3 class="text-xl font-semibold mb-4 text-slate-900 border-b pb-2">Standard Attributes</h3>
+                        <div id="product-sets-standard-attributes" class="space-y-3 max-h-96 overflow-y-auto pr-4"></div>
+                        <h3 class="text-xl font-semibold mt-8 mb-4 text-slate-900 border-b pb-2">Custom Attributes</h3>
                         
                         <!-- Custom Attributes Table -->
                         <div class="bg-white rounded-lg border border-slate-200 overflow-hidden">
@@ -832,20 +834,8 @@
                                 <span class="font-semibold text-slate-700">Product Set ID</span>
                                 <span class="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded-full">Default</span>
                             </div>
-                            <div class="flex items-center justify-between bg-white p-3 rounded-lg shadow-sm border border-slate-200" data-default="true">
-                                <span class="font-semibold text-slate-700">Name</span>
-                                <span class="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded-full">Default</span>
-                            </div>
-                            <div class="flex items-center justify-between bg-white p-3 rounded-lg shadow-sm border border-slate-200" data-default="true">
-                                <span class="font-semibold text-slate-700">onlineFlag</span>
-                                <span class="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded-full">Default</span>
-                            </div>
-                            <div class="flex items-center justify-between bg-white p-3 rounded-lg shadow-sm border border-slate-200" data-default="true">
-                                <span class="font-semibold text-slate-700">searchableFlag</span>
-                                <span class="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded-full">Default</span>
-                            </div>
                         </div>
-                        <div id="product-sets-no-attributes" class="text-center py-4 text-slate-500 mt-2"><p class="text-sm italic">No custom attributes added yet.</p></div>
+                        <div id="product-sets-no-attributes" class="text-center py-4 text-slate-500 mt-2"><p class="text-sm italic">No attributes selected yet.</p></div>
                         
                         <!-- CSV Structure Display -->
                         <div class="mt-6">
@@ -855,19 +845,10 @@
                                     <span class="font-medium text-slate-700">Column A:</span> <span class="text-slate-600">Product Set ID (Required)</span>
                                 </div>
                                 <div class="bg-white p-2 rounded border border-slate-200">
-                                    <span class="font-medium text-slate-700">Column B:</span> <span class="text-slate-600">Name (Required)</span>
+                                    <span class="font-medium text-slate-700">Next:</span> <span class="text-slate-600">Standard or Custom Attributes (if added)</span>
                                 </div>
                                 <div class="bg-white p-2 rounded border border-slate-200">
-                                    <span class="font-medium text-slate-700">Column C:</span> <span class="text-slate-600">onlineFlag (Optional)</span>
-                                </div>
-                                <div class="bg-white p-2 rounded border border-slate-200">
-                                    <span class="font-medium text-slate-700">Column D:</span> <span class="text-slate-600">searchableFlag (Optional)</span>
-                                </div>
-                                <div class="bg-white p-2 rounded border border-slate-200">
-                                    <span class="font-medium text-slate-700">Columns E+:</span> <span class="text-slate-600">Custom Attributes (if added)</span>
-                                </div>
-                                <div class="bg-white p-2 rounded border border-slate-200">
-                                    <span class="font-medium text-slate-700">Remaining:</span> <span class="text-slate-600">Product IDs (up to 100)</span>
+                                    <span class="font-medium text-slate-700">Finally:</span> <span class="text-slate-600">Variant Product IDs (up to 100)</span>
                                 </div>
                             </div>
                         </div>
@@ -1503,6 +1484,7 @@
             const generateStaticCustomerGroupCsvBtn = document.getElementById('generate-static-customer-group-csv-btn');
             const productSetsSection = document.getElementById('product-sets-section');
             const productSetsCatalogIdInput = document.getElementById('product-sets-catalog-id');
+            const productSetsStandardAttributes = document.getElementById('product-sets-standard-attributes');
             const productSetsCustomAttributesTable = document.getElementById('product-sets-custom-attributes-table');
             const addProductSetsRowBtn = document.getElementById('add-product-sets-row-btn');
             const clearProductSetsTableBtn = document.getElementById('clear-product-sets-table-btn');
@@ -1731,6 +1713,7 @@
             let customAttributeTypes = {}; // Store custom attribute types
             let parsedCsvData = null;
             let productSetsCustomAttributes = []; // Store custom attributes for Product Sets
+            let productSetsSelectedAttributes = new Set(); // Store selected standard attributes for Product Sets
 
             // --- Functions ---
             const getAttributeType = (attribute) => {
@@ -2041,15 +2024,21 @@
             };
 
             const generateProductSetsCSV = () => {
-                // Base headers
-                const headers = ['Product Set ID', 'Name', 'onlineFlag', 'searchableFlag'];
+                // Base header - only Product Set ID
+                const headers = ['Product Set ID'];
                 
-                // Add custom attribute headers after flags
+                // Add selected standard attribute headers
+                const sortedStandardAttrs = Array.from(productSetsSelectedAttributes).sort();
+                sortedStandardAttrs.forEach(attr => {
+                    headers.push(attr);
+                });
+                
+                // Add custom attribute headers after standard attributes
                 productSetsCustomAttributes.forEach(attr => {
                     headers.push(attr.id);
                 });
                 
-                // Add product ID columns after custom attributes
+                // Add product ID columns after all attributes
                 for (let i = 1; i <= 100; i++) {
                     headers.push(`Product ID ${i}`);
                 }
@@ -2110,7 +2099,10 @@
 
             const applyProductSetsCustomAttributes = () => {
                 const rows = productSetsCustomAttributesTable.querySelectorAll('tr');
-                productSetsCustomAttributes = [];
+                const newAttributes = [];
+                let addedCount = 0;
+                const invalidNames = [];
+                const duplicates = [];
                 
                 rows.forEach(row => {
                     const nameInput = row.querySelector('.product-sets-attr-name');
@@ -2123,25 +2115,87 @@
                         if (name) {
                             // Validate attribute name format
                             if (!/^[a-zA-Z][a-zA-Z0-9_]*$/.test(name)) {
-                                alert(`Invalid attribute name "${name}". Must start with a letter and contain only letters, numbers, and underscores.`);
+                                invalidNames.push(name);
+                                // Highlight the invalid row
+                                nameInput.classList.add('border-red-300', 'bg-red-50');
+                                setTimeout(() => {
+                                    nameInput.classList.remove('border-red-300', 'bg-red-50');
+                                }, 2000);
                                 return;
                             }
                             
-                            // Check for duplicates
+                            // Check for duplicates within the new batch
+                            if (newAttributes.find(attr => attr.id === name)) {
+                                duplicates.push(name);
+                                // Highlight the duplicate row
+                                nameInput.classList.add('border-red-300', 'bg-red-50');
+                                setTimeout(() => {
+                                    nameInput.classList.remove('border-red-300', 'bg-red-50');
+                                }, 2000);
+                                return;
+                            }
+                            
+                            // Check if already exists in productSetsCustomAttributes
                             if (productSetsCustomAttributes.find(attr => attr.id === name)) {
-                                alert(`Duplicate attribute name "${name}". Each attribute must have a unique name.`);
+                                duplicates.push(name);
+                                // Highlight the duplicate row
+                                nameInput.classList.add('border-red-300', 'bg-red-50');
+                                setTimeout(() => {
+                                    nameInput.classList.remove('border-red-300', 'bg-red-50');
+                                }, 2000);
                                 return;
                             }
                             
-                            productSetsCustomAttributes.push({ id: name, type: type });
+                            newAttributes.push({ id: name, type: type });
+                            addedCount++;
+                            
+                            // Clear the row after successful addition
+                            nameInput.value = '';
+                            typeSelect.value = '';
                         }
                     }
                 });
                 
-                // Update the selected columns list
-                renderProductSetsSelectedColumns();
+                // Add new attributes to the list
+                productSetsCustomAttributes.push(...newAttributes);
                 
-                alert(`Applied ${productSetsCustomAttributes.length} custom attributes.`);
+                // Update the selected columns list
+                if (addedCount > 0) {
+                    renderProductSetsSelectedColumns();
+                }
+                
+                // Show feedback in console
+                if (invalidNames.length > 0) {
+                    console.warn(`Invalid attribute names skipped: ${invalidNames.join(', ')}`);
+                }
+                if (duplicates.length > 0) {
+                    console.warn(`Duplicate attribute names skipped: ${duplicates.join(', ')}`);
+                }
+            };
+
+            const renderProductSetsStandardAttributes = () => {
+                productSetsStandardAttributes.innerHTML = '';
+                const attributeKeys = Object.keys(attributeData.Product).sort();
+                attributeKeys.forEach(attr => {
+                    const isChecked = productSetsSelectedAttributes.has(attr);
+                    const attributeType = attributeData.Product[attr];
+                    const typeColorClass = getTypeColorClass(attributeType);
+                    const div = document.createElement('div');
+                    div.classList.add('flex', 'items-center', 'justify-between', 'p-2', 'rounded-md', 'hover:bg-slate-100', 'transition-colors');
+                    div.innerHTML = `
+                        <div class="flex items-center">
+                            <input type="checkbox" id="ps-attr-${attr}" value="${attr}" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" ${isChecked ? 'checked' : ''}>
+                            <label for="ps-attr-${attr}" class="ml-3 text-sm text-slate-700">${attr}</label>
+                        </div>
+                        <span class="text-xs px-2 py-1 rounded-full font-medium ${typeColorClass}">${attributeType}</span>
+                    `;
+                    productSetsStandardAttributes.appendChild(div);
+                });
+            };
+
+            const handleProductSetsAttributeToggle = (attribute, isSelected) => {
+                isSelected ? productSetsSelectedAttributes.add(attribute) : productSetsSelectedAttributes.delete(attribute);
+                renderProductSetsSelectedColumns();
             };
 
             const renderProductSetsSelectedColumns = () => {
@@ -2154,22 +2208,42 @@
                 // Re-add default columns
                 defaultColumns.forEach(col => productSetsSelectedList.appendChild(col));
                 
-                // Add custom attributes
-                productSetsCustomAttributes.forEach(attr => {
+                // Add selected standard attributes
+                const sortedStandardAttrs = Array.from(productSetsSelectedAttributes).sort();
+                sortedStandardAttrs.forEach(attr => {
+                    const attrType = attributeData.Product[attr];
                     const attrDiv = document.createElement('div');
                     attrDiv.className = 'flex items-center justify-between bg-white p-3 rounded-lg shadow-sm border border-slate-200';
                     attrDiv.innerHTML = `
                         <div>
+                            <span class="font-semibold text-slate-700">${escapeXml(attr)}</span>
+                            <span class="block text-xs text-slate-500">${escapeXml(attrType)}</span>
+                        </div>
+                        <span class="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">Standard</span>
+                    `;
+                    productSetsSelectedList.appendChild(attrDiv);
+                });
+                
+                // Add custom attributes with remove buttons
+                productSetsCustomAttributes.forEach((attr, index) => {
+                    const attrDiv = document.createElement('div');
+                    attrDiv.className = 'flex items-center justify-between bg-white p-3 rounded-lg shadow-sm border border-slate-200';
+                    attrDiv.dataset.customAttrIndex = index;
+                    attrDiv.innerHTML = `
+                        <div class="flex-1">
                             <span class="font-semibold text-slate-700">${escapeXml(attr.id)}</span>
                             <span class="block text-xs text-slate-500">${escapeXml(attr.type)}</span>
                         </div>
-                        <span class="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full">Custom</span>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full">Custom</span>
+                            <button data-ps-attr-remove="${index}" class="text-red-500 hover:text-red-700 font-bold text-xl leading-none">&times;</button>
+                        </div>
                     `;
                     productSetsSelectedList.appendChild(attrDiv);
                 });
                 
                 // Show/hide no attributes message
-                if (productSetsCustomAttributes.length === 0) {
+                if (productSetsSelectedAttributes.size === 0 && productSetsCustomAttributes.length === 0) {
                     productSetsNoAttributes.classList.remove('hidden');
                 } else {
                     productSetsNoAttributes.classList.add('hidden');
@@ -3191,26 +3265,44 @@
                     // Handle ProductSets separately due to its unique structure
                     if (currentObjectType === 'ProductSets') {
                         const productSetId = row['Product Set ID'];
-                        const productSetName = row['Name'];
                         
-                        if (!productSetId || !productSetName) return; // Skip incomplete rows
+                        if (!productSetId) return; // Skip incomplete rows
                         
                         // Start product set XML
                         itemsXml += `\n    <product product-id="${escapeXml(productSetId)}">`;
-                        itemsXml += `\n        <display-name xml:lang="x-default"><![CDATA[${productSetName}]]></display-name>`;
                         
-                        // Add online-flag if provided
-                        const onlineFlag = row['onlineFlag'];
-                        if (onlineFlag !== undefined && onlineFlag !== '') {
-                            const onlineFlagValue = validateAndFormatValue(onlineFlag, 'Boolean');
-                            itemsXml += `\n        <online-flag>${onlineFlagValue}</online-flag>`;
-                        }
+                        // Add selected standard attributes
+                        const pageAttributeNames = ['pageTitle', 'pageDescription', 'pageKeywords', 'pageURL'];
+                        const standardElements = [];
+                        const pageElements = [];
                         
-                        // Add searchable-flag if provided
-                        const searchableFlag = row['searchableFlag'];
-                        if (searchableFlag !== undefined && searchableFlag !== '') {
-                            const searchableFlagValue = validateAndFormatValue(searchableFlag, 'Boolean');
-                            itemsXml += `\n        <searchable-flag>${searchableFlagValue}</searchable-flag>`;
+                        productSetsSelectedAttributes.forEach(attr => {
+                            const value = row[attr];
+                            if (value !== undefined && value !== '') {
+                                const attrType = attributeData.Product[attr];
+                                const formattedValue = validateAndFormatValue(value, attrType);
+                                const elementName = attr.replace(/([A-Z])/g, '-$1').toLowerCase();
+                                
+                                if (pageAttributeNames.includes(attr)) {
+                                    pageElements.push({ elementName, value: formattedValue });
+                                } else {
+                                    standardElements.push({ elementName, value: formattedValue });
+                                }
+                            }
+                        });
+                        
+                        // Add standard elements
+                        standardElements.forEach(elem => {
+                            itemsXml += `\n        <${elem.elementName}>${escapeXml(elem.value)}</${elem.elementName}>`;
+                        });
+                        
+                        // Add page attributes if any
+                        if (pageElements.length > 0) {
+                            itemsXml += `\n        <page-attributes>`;
+                            pageElements.forEach(elem => {
+                                itemsXml += `\n            <${elem.elementName} xml:lang="x-default">${escapeXml(elem.value)}</${elem.elementName}>`;
+                            });
+                            itemsXml += `\n        </page-attributes>`;
                         }
                         
                         // Add custom attributes if any
@@ -3940,9 +4032,12 @@
                     inventorySection.classList.add('hidden');
                     productSetsSection.classList.remove('hidden');
                     
-                    // Initialize custom attributes table
+                    // Initialize attributes
                     productSetsCustomAttributes = [];
+                    productSetsSelectedAttributes.clear();
                     clearProductSetsCustomAttributesTable();
+                    renderProductSetsStandardAttributes();
+                    renderProductSetsSelectedColumns();
                 } else {
                     // Show locale, site, and attributes sections for Product, Category, and Customer
                     if (currentObjectType === 'Customer') {
@@ -4062,6 +4157,14 @@
                 const attrToRemove = e.target.dataset.attrRemove;
                 if (attrToRemove) { selectedAttributes.delete(attrToRemove); renderSelectedAttributes(); renderStandardAttributes(); }
             });
+            productSetsSelectedList.addEventListener('click', (e) => {
+                const attrIndexToRemove = e.target.dataset.psAttrRemove;
+                if (attrIndexToRemove !== undefined) {
+                    productSetsCustomAttributes.splice(parseInt(attrIndexToRemove), 1);
+                    renderProductSetsSelectedColumns();
+                }
+            });
+            productSetsStandardAttributes.addEventListener('change', (e) => { if (e.target.type === 'checkbox') handleProductSetsAttributeToggle(e.target.value, e.target.checked); });
             generateSheetBtn.addEventListener('click', generateCSV);
             generateVariationCsvBtn.addEventListener('click', generateVariationMappingCSV);
             generateProductRecommendationCsvBtn.addEventListener('click', generateProductRecommendationCSV);
