@@ -828,24 +828,24 @@
                     <div class="bg-slate-50 p-6 rounded-xl border border-slate-200">
                         <h3 class="text-xl font-semibold mb-4 text-slate-900 border-b pb-2">Selected Columns</h3>
                         <div id="product-sets-selected-list" class="space-y-2">
-                            <div class="flex items-center justify-between bg-white p-3 rounded-lg shadow-sm border border-slate-200">
+                            <div class="flex items-center justify-between bg-white p-3 rounded-lg shadow-sm border border-slate-200" data-default="true">
                                 <span class="font-semibold text-slate-700">Product Set ID</span>
                                 <span class="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded-full">Default</span>
                             </div>
-                            <div class="flex items-center justify-between bg-white p-3 rounded-lg shadow-sm border border-slate-200">
+                            <div class="flex items-center justify-between bg-white p-3 rounded-lg shadow-sm border border-slate-200" data-default="true">
                                 <span class="font-semibold text-slate-700">Name</span>
                                 <span class="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded-full">Default</span>
                             </div>
-                            <div class="flex items-center justify-between bg-white p-3 rounded-lg shadow-sm border border-slate-200">
+                            <div class="flex items-center justify-between bg-white p-3 rounded-lg shadow-sm border border-slate-200" data-default="true">
                                 <span class="font-semibold text-slate-700">onlineFlag</span>
                                 <span class="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded-full">Default</span>
                             </div>
-                            <div class="flex items-center justify-between bg-white p-3 rounded-lg shadow-sm border border-slate-200">
+                            <div class="flex items-center justify-between bg-white p-3 rounded-lg shadow-sm border border-slate-200" data-default="true">
                                 <span class="font-semibold text-slate-700">searchableFlag</span>
                                 <span class="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded-full">Default</span>
                             </div>
                         </div>
-                        <div id="product-sets-no-attributes" class="text-center py-4 text-slate-500 hidden"><p>No custom attributes added yet.</p></div>
+                        <div id="product-sets-no-attributes" class="text-center py-4 text-slate-500 mt-2"><p class="text-sm italic">No custom attributes added yet.</p></div>
                         
                         <!-- CSV Structure Display -->
                         <div class="mt-6">
@@ -2103,7 +2103,9 @@
 
             const clearProductSetsCustomAttributesTable = () => {
                 productSetsCustomAttributesTable.innerHTML = '';
+                productSetsCustomAttributes = [];
                 addProductSetsTableRow();
+                renderProductSetsSelectedColumns();
             };
 
             const applyProductSetsCustomAttributes = () => {
@@ -2143,8 +2145,10 @@
             };
 
             const renderProductSetsSelectedColumns = () => {
-                // Clear existing custom attributes from the list (keep only defaults)
-                const defaultColumns = productSetsSelectedList.querySelectorAll('[data-default="true"]');
+                // Store default columns before clearing
+                const defaultColumns = Array.from(productSetsSelectedList.querySelectorAll('[data-default="true"]')).map(col => col.cloneNode(true));
+                
+                // Clear the list
                 productSetsSelectedList.innerHTML = '';
                 
                 // Re-add default columns
