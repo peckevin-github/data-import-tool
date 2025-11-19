@@ -1731,7 +1731,6 @@
             
             // Site-specific attributes for Products
             const siteSpecificAttributes = [
-                'displayName',
                 'facebookEnabled',
                 'onlineFlag',
                 'onlineFrom',
@@ -1748,6 +1747,7 @@
             
             // Localizable attributes for Products
             const localizableProductAttributes = [
+                'displayName',
                 'longDescription',
                 'pageDescription',
                 'pageKeywords',
@@ -1852,12 +1852,11 @@
                 const customAttr = customAttributeInput.value.trim();
                 const customType = customAttributeType.value || 'String'; // Default to String if not specified
                 
-                if (customAttr && !selectedAttributes.has(customAttr) && !Object.keys(currentStandardAttributes).includes(customAttr)) {
+                // Allow custom attributes even if they have the same name as standard attributes
+                if (customAttr && !selectedAttributes.has(customAttr)) {
                     selectedAttributes.add(customAttr);
-                    // Only store the type if it's not the default String type
-                    if (customType !== 'String') {
-                        customAttributeTypes[customAttr] = customType;
-                    }
+                    // Always store custom attributes in customAttributeTypes to distinguish them from standard attributes
+                    customAttributeTypes[customAttr] = customType;
                     customAttributeInput.value = '';
                     customAttributeType.value = ''; // Reset to default (String)
                     renderSelectedAttributes();
@@ -1997,12 +1996,12 @@
                     const isLocalizable = localizableCheckbox.checked;
                     const isSiteSpecific = siteSpecificCheckbox.checked;
                     
-                    if (name && !selectedAttributes.has(name) && !Object.keys(currentStandardAttributes).includes(name)) {
+                    // Allow custom attributes even if they have the same name as standard attributes
+                    // Check only for duplicates within selected custom attributes
+                    if (name && !selectedAttributes.has(name)) {
                         selectedAttributes.add(name);
-                        // Store the type if it's not the default String type
-                        if (type !== 'String') {
-                            customAttributeTypes[name] = type;
-                        }
+                        // Always store custom attributes in customAttributeTypes to distinguish them from standard attributes
+                        customAttributeTypes[name] = type;
                         // Store localizable/site-specific flags if set
                         if (isLocalizable) {
                             if (!customAttributeFlags[name]) customAttributeFlags[name] = {};
@@ -2038,7 +2037,7 @@
                 
                 // Show feedback
                 if (duplicates.length > 0) {
-                    console.warn(`Duplicate or standard attributes skipped: ${duplicates.join(', ')}`);
+                    console.warn(`Duplicate attributes skipped: ${duplicates.join(', ')}`);
                 }
             };
 
@@ -2886,7 +2885,7 @@
 
                 // Define localizable attributes that should include locale information
                 const localizableAttributes = {
-                    Product: ['shortDescription', 'longDescription', 'pageTitle', 'pageDescription', 'pageKeywords', 'pageURL', 'storeReceiptName'],
+                    Product: ['displayName', 'shortDescription', 'longDescription', 'pageTitle', 'pageDescription', 'pageKeywords', 'pageURL', 'storeReceiptName'],
                     Category: ['displayName', 'description', 'pageTitle', 'pageDescription', 'pageKeywords', 'pageURL'],
                     ContentAsset: ['name', 'description', 'body', 'pageTitle', 'pageDescription', 'pageKeywords', 'pageURL', 'searchWords'],
                     Customer: [], // Customers don't have localizable attributes in this context
@@ -3590,15 +3589,19 @@
                             
                             // Include attribute if it has a value OR if it was selected (allows blank values for bulk delete)
                             if (row[key] || isSelected) {
-                                if (isStandardAttribute && isPageAttribute) {
+                                // Prioritize custom attributes over standard - if it's in customAttributeTypes, always treat as custom
+                                if (isCustomAttribute) {
+                                    // Custom attributes keep their original ID format
+                                    customElements.push({ key, value: row[key] || '' });
+                                } else if (isStandardAttribute && isPageAttribute) {
                                     // Page attributes should be wrapped in page-attributes container
                                     const elementName = mappedKey.replace(/([A-Z])/g, '-$1').toLowerCase();
                                     pageElements.push({ key: mappedKey, elementName, value: row[key] || '' });
                                 } else if (isStandardAttribute) {
                                     const elementName = mappedKey.replace(/([A-Z])/g, '-$1').toLowerCase();
                                     standardElements.push({ key: mappedKey, elementName, value: row[key] || '' });
-                                } else if (isCustomAttribute || isSelected) {
-                                    // Custom attributes keep their original ID format
+                                } else if (isSelected) {
+                                    // Fallback for selected attributes that aren't standard or explicitly custom
                                     customElements.push({ key, value: row[key] || '' });
                                 }
                             }
