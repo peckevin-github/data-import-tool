@@ -141,9 +141,10 @@
                 <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
                     <h3 class="text-xs font-medium text-slate-600 mb-2 uppercase tracking-wide">Online Marketing</h3>
                     <div class="space-y-1" id="online-marketing-options">
-                        <div class="p-1.5 text-sm text-slate-500 italic">
-                            Coming Soon
-                        </div>
+                        <label class="flex items-center space-x-2 cursor-pointer p-1.5 rounded hover:bg-white transition-colors">
+                            <input type="radio" name="objectType" value="CouponCode" class="h-3 w-3 text-indigo-600 focus:ring-indigo-500 border-gray-300">
+                            <span class="text-sm font-medium text-slate-700">Coupon Code (multiple)</span>
+                        </label>
                     </div>
                 </div>
 
@@ -276,6 +277,27 @@
                             <li>• If variation attributes are provided, the tool will generate the complete variation attribute structure with all values</li>
                             <li>• If variation attributes are omitted, the tool will only create the products and basic variant mapping</li>
                             <li>• The tool will automatically create all products if they don't exist</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Collapsible Help Section for Coupon Code -->
+            <div id="coupon-code-help" class="mb-6 hidden">
+                <div class="bg-blue-50 rounded-lg border border-blue-200">
+                    <button type="button" class="w-full p-4 text-left flex items-center justify-between hover:bg-blue-100 transition-colors rounded-lg" onclick="this.parentElement.querySelector('.help-content').classList.toggle('hidden'); this.querySelector('.toggle-icon').classList.toggle('rotate-180');">
+                        <h3 class="font-semibold text-blue-900">📝 How Coupon Code Import Works</h3>
+                        <svg class="toggle-icon w-5 h-5 text-blue-900 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+                    <div class="help-content p-4 pt-0">
+                        <ul class="text-sm text-blue-700 space-y-1">
+                            <li>• <strong>Each row</strong> represents one coupon code</li>
+                            <li>• <strong>Simple structure:</strong> CSV contains just one column - "Coupon Code"</li>
+                            <li>• <strong>Coupon Code Group ID:</strong> You'll specify the group ID in Step 3 (required)</li>
+                            <li>• <strong>Multiple codes:</strong> Import many coupon codes at once for a single coupon promotion</li>
+                            <li>• <strong>Auto-enabled:</strong> All codes will be enabled by default in the XML</li>
                         </ul>
                     </div>
                 </div>
@@ -1347,6 +1369,27 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- Coupon Code Section -->
+            <div id="coupon-code-section" class="hidden">
+                <div class="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                    <h3 class="text-xl font-semibold mb-4 text-slate-900 text-center">Coupon Code CSV Template</h3>
+                    
+                    <div class="mb-6">
+                        <h4 class="font-semibold text-slate-800 mb-2">CSV Structure:</h4>
+                        <div class="grid grid-cols-1 gap-4 mb-4 max-w-md mx-auto">
+                            <div class="bg-white p-3 rounded-lg border border-slate-300">
+                                <span class="font-medium text-slate-700">Column A: Coupon Code</span>
+                                <span class="block text-xs text-slate-500">Required - Each row is one unique coupon code</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center">
+                        <button id="generate-coupon-code-csv-btn" class="px-8 py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all transform hover:scale-105 shadow-lg">Generate CSV Template</button>
+                    </div>
+                </div>
+            </div>
 
         </main>
         
@@ -1382,6 +1425,13 @@
             <div id="step3-inventory-section" class="mb-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200 hidden">
                 <label for="step3-inventory-list-id" class="block text-sm font-medium text-slate-700 mb-2">Inventory List ID <span class="text-red-500">*</span></label>
                 <input type="text" id="step3-inventory-list-id" placeholder="e.g., 'inventory-TEST'" class="w-full px-4 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow">
+                <p class="text-xs text-slate-500 mt-1">Required for XML generation</p>
+            </div>
+            
+            <!-- Coupon Code Field (Coupon Code Group ID) -->
+            <div id="step3-coupon-code-section" class="mb-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200 hidden">
+                <label for="step3-coupon-code-group-id" class="block text-sm font-medium text-slate-700 mb-2">Coupon Code Group ID <span class="text-red-500">*</span></label>
+                <input type="text" id="step3-coupon-code-group-id" placeholder="e.g., 'summer-promo-2024'" class="w-full px-4 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow">
                 <p class="text-xs text-slate-500 mt-1">Required for XML generation</p>
             </div>
             
@@ -1421,6 +1471,7 @@
             const variationGroupHelp = document.getElementById('variation-group-help');
             const pricesHelp = document.getElementById('prices-help');
             const inventoryHelp = document.getElementById('inventory-help');
+            const couponCodeHelp = document.getElementById('coupon-code-help');
             const contentAssetHelp = document.getElementById('content-asset-help');
             const libraryFolderHelp = document.getElementById('library-folder-help');
             const staticCustomerGroupHelp = document.getElementById('static-customer-group-help');
@@ -1466,6 +1517,8 @@
             const step3CurrencyInput = document.getElementById('step3-currency');
             const step3InventorySection = document.getElementById('step3-inventory-section');
             const step3InventoryListIdInput = document.getElementById('step3-inventory-list-id');
+            const step3CouponCodeSection = document.getElementById('step3-coupon-code-section');
+            const step3CouponCodeGroupIdInput = document.getElementById('step3-coupon-code-group-id');
             const recommendationCatalogIdInput = document.getElementById('recommendation-catalog-id');
             const variationMappingCatalogIdInput = document.getElementById('variation-mapping-catalog-id');
             const categoryAssignmentCatalogIdInput = document.getElementById('category-assignment-catalog-id');
@@ -1485,6 +1538,8 @@
             const inventorySection = document.getElementById('inventory-section');
             const generateInventoryCsvBtn = document.getElementById('generate-inventory-csv-btn');
             const inventoryListIdInput = document.getElementById('inventory-list-id');
+            const couponCodeSection = document.getElementById('coupon-code-section');
+            const generateCouponCodeCsvBtn = document.getElementById('generate-coupon-code-csv-btn');
             const contentAssetSection = document.getElementById('content-asset-section');
             const contentLibraryIdInput = document.getElementById('content-library-id');
             const contentLocaleSelect = document.getElementById('content-locale-select');
@@ -2060,6 +2115,14 @@
             };
 
             const generateCSV = () => {
+                // Special handling for Coupon Code - no attributes needed
+                if (currentObjectType === 'CouponCode') {
+                    const headers = ['Coupon Code'];
+                    const csvContent = headers.join(',');
+                    downloadFile(csvContent, 'text/csv', 'b2c_coupon_code_import_template.csv');
+                    return;
+                }
+                
                 if (selectedAttributes.size === 0 || !currentObjectType) return;
                 const useLocale = localeCheckbox.checked;
                 const selectedLocale = useLocale ? localeSelect.value : 'default';
@@ -2845,6 +2908,20 @@
                     }
                 }
                 
+                // Special validation for Coupon Code (needs coupon code group ID)
+                if (currentObjectType === 'CouponCode') {
+                    const couponCodeGroupId = step3CouponCodeGroupIdInput.value.trim();
+                    
+                    if (!couponCodeGroupId) {
+                        conversionStatus.textContent = 'Error: Please enter a Coupon Code Group ID above.';
+                        conversionStatus.classList.add('text-red-500');
+                        step3CouponCodeSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        step3CouponCodeGroupIdInput.classList.add('border-red-500');
+                        setTimeout(() => step3CouponCodeGroupIdInput.classList.remove('border-red-500'), 3000);
+                        return;
+                    }
+                }
+                
                 // Get catalog ID from Step 3 input or use special values for non-catalog types
                 const catalogId = catalogRequiredTypes.includes(currentObjectType)
                     ? step3CatalogIdInput.value.trim()
@@ -2866,6 +2943,27 @@
                 const useSiteSpecific = siteCheckbox.checked || siteCheckboxMoved.checked;
                 const siteId = useSiteSpecific ? (siteIdInput.value.trim() || siteIdInputMoved.value.trim()) : '';
                 const idField = `${currentObjectType}ID`;
+
+                // Special handling for Coupon Code
+                if (currentObjectType === 'CouponCode') {
+                    const couponCodeGroupId = step3CouponCodeGroupIdInput.value.trim();
+                    let codesXml = '';
+                    
+                    parsedCsvData.forEach(row => {
+                        const code = row['Coupon Code'];
+                        if (code && code.trim() !== '') {
+                            codesXml += `\n<code>${escapeXml(code.trim())}</code>`;
+                        }
+                    });
+                    
+                    const finalXml = `<?xml version="1.0" encoding="UTF-8"?>\n<coupons xmlns="http://www.demandware.com/xml/impex/coupon/2008-06-17">\n<coupon coupon-id="${escapeXml(couponCodeGroupId)}"><enabled-flag>true</enabled-flag><multiple-codes/></coupon>\n<coupon-codes coupon-id="${escapeXml(couponCodeGroupId)}">${codesXml}\n</coupon-codes>\n</coupons>`;
+                    
+                    downloadFile(finalXml, 'application/xml', `b2c_coupon_codes_${couponCodeGroupId}.xml`);
+                    conversionStatus.textContent = 'Conversion successful!';
+                    conversionStatus.classList.remove('text-red-500');
+                    conversionStatus.classList.add('text-green-600');
+                    return;
+                }
 
                 let itemsXml = '';
                 const tagMap = {
@@ -3956,6 +4054,7 @@
                 variationGroupHelp.classList.add('hidden');
                 pricesHelp.classList.add('hidden');
                 inventoryHelp.classList.add('hidden');
+                couponCodeHelp.classList.add('hidden');
                 contentAssetHelp.classList.add('hidden');
                 libraryFolderHelp.classList.add('hidden');
                 staticCustomerGroupHelp.classList.add('hidden');
@@ -4006,6 +4105,13 @@
                     step3InventorySection.classList.add('hidden');
                 }
                 
+                // Show/hide Coupon Code fields
+                if (currentObjectType === 'CouponCode') {
+                    step3CouponCodeSection.classList.remove('hidden');
+                } else {
+                    step3CouponCodeSection.classList.add('hidden');
+                }
+                
                 // Handle different UI states based on object type
                 if (currentObjectType === 'VariationMapping') {
                     // Hide locale and attributes sections for Variation Mapping
@@ -4025,6 +4131,11 @@
                     categoryAssignmentSection.classList.add('hidden');
                     categoryPositionSection.classList.add('hidden');
                     imageMappingSection.classList.add('hidden');
+                    variationGroupSection.classList.add('hidden');
+                    pricesSection.classList.add('hidden');
+                    inventorySection.classList.add('hidden');
+                    productSetsSection.classList.add('hidden');
+                    couponCodeSection.classList.add('hidden');
                 } else if (currentObjectType === 'ProductRecommendation') {
                     // Hide locale and attributes sections for Product Recommendation
                     productRecommendationHelp.classList.remove('hidden'); // Show help section
@@ -4043,6 +4154,11 @@
                     categoryAssignmentSection.classList.add('hidden');
                     categoryPositionSection.classList.add('hidden');
                     imageMappingSection.classList.add('hidden');
+                    variationGroupSection.classList.add('hidden');
+                    pricesSection.classList.add('hidden');
+                    inventorySection.classList.add('hidden');
+                    productSetsSection.classList.add('hidden');
+                    couponCodeSection.classList.add('hidden');
                 } else if (currentObjectType === 'CategoryAssignment') {
                     // Hide locale and attributes sections for Category Assignment
                     categoryAssignmentHelp.classList.remove('hidden'); // Show help section
@@ -4061,6 +4177,11 @@
                     categoryAssignmentSection.classList.remove('hidden');
                     categoryPositionSection.classList.add('hidden');
                     imageMappingSection.classList.add('hidden');
+                    variationGroupSection.classList.add('hidden');
+                    pricesSection.classList.add('hidden');
+                    inventorySection.classList.add('hidden');
+                    productSetsSection.classList.add('hidden');
+                    couponCodeSection.classList.add('hidden');
                 } else if (currentObjectType === 'CategoryPosition') {
                     // Hide locale and attributes sections for Category Position
                     categoryPositionHelp.classList.remove('hidden'); // Show help section
@@ -4079,6 +4200,11 @@
                     categoryAssignmentSection.classList.add('hidden');
                     categoryPositionSection.classList.remove('hidden');
                     imageMappingSection.classList.add('hidden');
+                    variationGroupSection.classList.add('hidden');
+                    pricesSection.classList.add('hidden');
+                    inventorySection.classList.add('hidden');
+                    productSetsSection.classList.add('hidden');
+                    couponCodeSection.classList.add('hidden');
                 } else if (currentObjectType === 'VariationGroup') {
                     // Show locale and site sections for Variation Group (similar to Product)
                     variationGroupHelp.classList.remove('hidden'); // Show help section
@@ -4099,6 +4225,9 @@
                     imageMappingSection.classList.add('hidden');
                     variationGroupSection.classList.remove('hidden');
                     pricesSection.classList.add('hidden');
+                    inventorySection.classList.add('hidden');
+                    productSetsSection.classList.add('hidden');
+                    couponCodeSection.classList.add('hidden');
                 } else if (currentObjectType === 'ImageMapping') {
                     // Hide locale and attributes sections for Image Mapping
                     imageMappingHelp.classList.remove('hidden'); // Show help section
@@ -4119,6 +4248,9 @@
                     imageMappingSection.classList.remove('hidden');
                     variationGroupSection.classList.add('hidden');
                     pricesSection.classList.add('hidden');
+                    inventorySection.classList.add('hidden');
+                    productSetsSection.classList.add('hidden');
+                    couponCodeSection.classList.add('hidden');
                 } else if (currentObjectType === 'Prices') {
                     // Hide locale and attributes sections for Prices
                     pricesHelp.classList.remove('hidden'); // Show help section
@@ -4141,6 +4273,7 @@
                     pricesSection.classList.remove('hidden');
                     inventorySection.classList.add('hidden');
                     productSetsSection.classList.add('hidden');
+                    couponCodeSection.classList.add('hidden');
                 } else if (currentObjectType === 'Inventory') {
                     // Hide locale and attributes sections for Inventory
                     inventoryHelp.classList.remove('hidden'); // Show help section
@@ -4163,6 +4296,7 @@
                     pricesSection.classList.add('hidden');
                     inventorySection.classList.remove('hidden');
                     productSetsSection.classList.add('hidden');
+                    couponCodeSection.classList.add('hidden');
                 } else if (currentObjectType === 'ContentAsset') {
                     // Show content asset section for Content Assets
                     contentAssetHelp.classList.remove('hidden'); // Show help section
@@ -4185,6 +4319,7 @@
                     pricesSection.classList.add('hidden');
                     inventorySection.classList.add('hidden');
                     productSetsSection.classList.add('hidden');
+                    couponCodeSection.classList.add('hidden');
                     
                 defaultColumnHeader.textContent = `${currentObjectType} ID`;
                 standardAttributesHeader.textContent = `Standard ${currentObjectType} Attributes`;
@@ -4219,6 +4354,7 @@
                     pricesSection.classList.add('hidden');
                     inventorySection.classList.add('hidden');
                     productSetsSection.classList.add('hidden');
+                    couponCodeSection.classList.add('hidden');
                 } else if (currentObjectType === 'StaticCustomerGroup') {
                     // Show static customer group section for Static Customer Group
                     staticCustomerGroupHelp.classList.remove('hidden'); // Show help section
@@ -4241,6 +4377,7 @@
                     pricesSection.classList.add('hidden');
                     inventorySection.classList.add('hidden');
                     productSetsSection.classList.add('hidden');
+                    couponCodeSection.classList.add('hidden');
                 } else if (currentObjectType === 'ProductSets') {
                     // Show locale and site sections for Product Sets (similar to Product and Variation Groups)
                     productSetsHelp.classList.remove('hidden'); // Show help section
@@ -4263,6 +4400,7 @@
                     pricesSection.classList.add('hidden');
                     inventorySection.classList.add('hidden');
                     productSetsSection.classList.remove('hidden');
+                    couponCodeSection.classList.add('hidden');
                     
                     // Initialize attributes
                     productSetsCustomAttributes = [];
@@ -4270,6 +4408,29 @@
                     clearProductSetsCustomAttributesTable();
                     renderProductSetsStandardAttributes();
                     renderProductSetsSelectedColumns();
+                } else if (currentObjectType === 'CouponCode') {
+                    // Show help and simple section for Coupon Code
+                    couponCodeHelp.classList.remove('hidden'); // Show help section
+                    localeSection.classList.add('hidden');
+                    localeSectionMoved.classList.add('hidden');
+                    siteSection.classList.add('hidden');
+                    siteSectionMoved.classList.add('hidden');
+                    productAttributesDescription.classList.add('hidden');
+                    attributesSection.classList.add('hidden');
+                    customAttributesSection.classList.add('hidden');
+                    contentAssetSection.classList.add('hidden');
+                    libraryFolderSection.classList.add('hidden');
+                    staticCustomerGroupSection.classList.add('hidden');
+                    variationMappingSection.classList.add('hidden');
+                    productRecommendationSection.classList.add('hidden');
+                    categoryAssignmentSection.classList.add('hidden');
+                    categoryPositionSection.classList.add('hidden');
+                    imageMappingSection.classList.add('hidden');
+                    variationGroupSection.classList.add('hidden');
+                    pricesSection.classList.add('hidden');
+                    inventorySection.classList.add('hidden');
+                    productSetsSection.classList.add('hidden');
+                    couponCodeSection.classList.remove('hidden');
                 } else {
                     // Show locale, site, and attributes sections for Product, Category, and Customer
                     if (currentObjectType === 'Customer') {
@@ -4311,8 +4472,9 @@
                     pricesSection.classList.add('hidden');
                     inventorySection.classList.add('hidden');
                     productSetsSection.classList.add('hidden');
-                    
-                    defaultColumnHeader.textContent = `${currentObjectType} ID`;
+                    couponCodeSection.classList.add('hidden');
+
+                defaultColumnHeader.textContent = `${currentObjectType} ID`;
                     standardAttributesHeader.textContent = `Standard ${currentObjectType} Attributes`;
                     customAttributesHeader.textContent = `Custom ${currentObjectType} Attributes`;
                     
@@ -4407,6 +4569,7 @@
             generateVariationGroupCsvBtn.addEventListener('click', generateVariationGroupCSV);
             generatePricesCsvBtn.addEventListener('click', generatePricesCSV);
             generateInventoryCsvBtn.addEventListener('click', generateInventoryCSV);
+            generateCouponCodeCsvBtn.addEventListener('click', generateCSV);
             generateLibraryFolderCsvBtn.addEventListener('click', generateLibraryFolderCSV);
             generateStaticCustomerGroupCsvBtn.addEventListener('click', generateStaticCustomerGroupCSV);
             generateProductSetsCsvBtn.addEventListener('click', generateProductSetsCSV);
