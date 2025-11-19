@@ -1731,6 +1731,7 @@
             
             // Site-specific attributes for Products
             const siteSpecificAttributes = [
+                'displayName',
                 'facebookEnabled',
                 'onlineFlag',
                 'onlineFrom',
@@ -1747,7 +1748,6 @@
             
             // Localizable attributes for Products
             const localizableProductAttributes = [
-                'displayName',
                 'longDescription',
                 'pageDescription',
                 'pageKeywords',
@@ -2886,7 +2886,7 @@
 
                 // Define localizable attributes that should include locale information
                 const localizableAttributes = {
-                    Product: ['displayName', 'shortDescription', 'longDescription', 'pageTitle', 'pageDescription', 'pageKeywords', 'pageURL', 'storeReceiptName'],
+                    Product: ['shortDescription', 'longDescription', 'pageTitle', 'pageDescription', 'pageKeywords', 'pageURL', 'storeReceiptName'],
                     Category: ['displayName', 'description', 'pageTitle', 'pageDescription', 'pageKeywords', 'pageURL'],
                     ContentAsset: ['name', 'description', 'body', 'pageTitle', 'pageDescription', 'pageKeywords', 'pageURL', 'searchWords'],
                     Customer: [], // Customers don't have localizable attributes in this context
