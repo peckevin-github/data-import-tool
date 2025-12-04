@@ -3124,6 +3124,7 @@
                     : '';
                 const selectedLocale = localeInputGlobal.value.trim() || 'default';
                 const siteId = siteIdInputGlobal.value.trim();
+                const useSiteSpecific = !!siteId; // Boolean flag to indicate if site-specific attributes should be included
                 const idField = `${currentObjectType}ID`;
 
                 // Special handling for Coupon Code
