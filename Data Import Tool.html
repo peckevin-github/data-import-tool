@@ -1830,6 +1830,35 @@
             const getAttributeType = (attribute) => {
                 return currentStandardAttributes[attribute] || customAttributeTypes[attribute] || 'String';
             };
+            
+            const convertToXmlElementName = (attr) => {
+                // Special handling for specific attributes with known XML element names
+                const specialCases = {
+                    'EAN': 'ean',
+                    'UPC': 'upc',
+                    'UUID': 'uuid',
+                    'ID': 'id',
+                    'manufacturerSKU': 'manufacturer-sku',
+                    'pageURL': 'page-url',
+                    'taxClassID': 'tax-class-id',
+                    'localizedTaxClassID': 'localized-tax-class-id',
+                    'siteMapChangeFrequency': 'sitemap-changefrequency',
+                    'siteMapIncludedFlag': 'sitemap-included-flag',
+                    'siteMapPriority': 'sitemap-priority',
+                    'catBannerID': 'cat-banner-id',
+                    'sizeChartID': 'size-chart-id',
+                    'customCSSFile': 'custom-css-file',
+                    'taxID': 'tax-id',
+                    'taxIDType': 'tax-id-type'
+                };
+                
+                if (specialCases[attr]) {
+                    return specialCases[attr];
+                }
+                
+                // Standard camelCase to kebab-case conversion
+                return attr.replace(/([A-Z])/g, '-$1').toLowerCase();
+            };
 
             const updateLocaleAndSiteSections = () => {
                 // Check if any selected attribute is localizable
@@ -1890,6 +1919,9 @@
                     const isSiteSpecific = siteSpecificAttributes.includes(attr);
                     const isLocalizable = localizableProductAttributes.includes(attr);
                     
+                    // Convert to XML element name for display
+                    const displayName = convertToXmlElementName(attr);
+                    
                     // Globe icon for site-specific (blue)
                     const globeIcon = isSiteSpecific ? '<svg class="w-3 h-3 ml-1 inline text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.977 5.977 0 0116 10c0 .34-.028.675-.083 1H15a2 2 0 00-2 2v2.197A5.973 5.973 0 0110 16v-2a2 2 0 00-2-2 2 2 0 01-2-2 2 2 0 00-1.668-1.973z" clip-rule="evenodd"/></svg>' : '';
                     
@@ -1901,7 +1933,7 @@
                     div.innerHTML = `
                         <div class="flex items-center">
                             <input type="checkbox" id="attr-${attr}" value="${attr}" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" ${isChecked ? 'checked' : ''}>
-                            <label for="attr-${attr}" class="ml-3 text-sm text-slate-700 flex items-center">${attr}${globeIcon}${langIcon}</label>
+                            <label for="attr-${attr}" class="ml-3 text-sm text-slate-700 flex items-center">${displayName}${globeIcon}${langIcon}</label>
                         </div>
                         <span class="text-xs px-2 py-1 rounded-full font-medium ${typeColorClass}">${attributeType}</span>
                     `;
@@ -1937,11 +1969,14 @@
                     const typeLabel = isCustom ? 'Custom' : 'Standard';
                     const typeLabelClass = isCustom ? 'text-indigo-600 bg-indigo-50' : 'text-green-600 bg-green-50';
                     
+                    // Convert to XML element name for display if it's a standard attribute
+                    const displayName = isCustom ? attr : convertToXmlElementName(attr);
+                    
                     // Build the content with checkboxes
                     div.innerHTML = `
                         <div class="flex items-center justify-between mb-2">
                             <div>
-                                <span class="font-semibold text-slate-700">${attr}</span>
+                                <span class="font-semibold text-slate-700">${displayName}</span>
                                 <span class="block text-xs text-slate-500">${attributeType}</span>
                             </div>
                             <div class="flex items-center space-x-2">
@@ -2503,6 +2538,9 @@
                     const isSiteSpecific = siteSpecificAttributes.includes(attr);
                     const isLocalizable = localizableProductAttributes.includes(attr);
                     
+                    // Convert to XML element name for display
+                    const displayName = convertToXmlElementName(attr);
+                    
                     // Globe icon for site-specific (blue)
                     const globeIcon = isSiteSpecific ? '<svg class="w-3 h-3 ml-1 inline text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.977 5.977 0 0116 10c0 .34-.028.675-.083 1H15a2 2 0 00-2 2v2.197A5.973 5.973 0 0110 16v-2a2 2 0 00-2-2 2 2 0 01-2-2 2 2 0 00-1.668-1.973z" clip-rule="evenodd"/></svg>' : '';
                     
@@ -2514,7 +2552,7 @@
                     div.innerHTML = `
                         <div class="flex items-center">
                             <input type="checkbox" id="ps-attr-${attr}" value="${attr}" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" ${isChecked ? 'checked' : ''}>
-                            <label for="ps-attr-${attr}" class="ml-3 text-sm text-slate-700 flex items-center">${attr}${globeIcon}${langIcon}</label>
+                            <label for="ps-attr-${attr}" class="ml-3 text-sm text-slate-700 flex items-center">${displayName}${globeIcon}${langIcon}</label>
                         </div>
                         <span class="text-xs px-2 py-1 rounded-full font-medium ${typeColorClass}">${attributeType}</span>
                     `;
@@ -2550,6 +2588,10 @@
                     
                     const attrFlags = attributeFlags[attr];
                     const attrType = attributeData.Product[attr];
+                    
+                    // Convert to XML element name for display
+                    const displayName = convertToXmlElementName(attr);
+                    
                     const attrDiv = document.createElement('div');
                     attrDiv.className = 'bg-white p-3 rounded-lg shadow-sm border border-slate-200';
                     attrDiv.dataset.attribute = attr;
@@ -2557,7 +2599,7 @@
                     attrDiv.innerHTML = `
                         <div class="flex items-center justify-between mb-2">
                             <div>
-                                <span class="font-semibold text-slate-700">${escapeXml(attr)}</span>
+                                <span class="font-semibold text-slate-700">${escapeXml(displayName)}</span>
                                 <span class="block text-xs text-slate-500">${escapeXml(attrType)}</span>
                             </div>
                             <span class="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">Standard</span>
@@ -3611,7 +3653,7 @@
                         
                         Object.keys(row).forEach(key => {
                             if (key !== 'ContentAssetID' && !skipAttributes.includes(key) && row[key] && row[key].trim() !== '') {
-                                const xmlKey = key.replace(/([A-Z])/g, '-$1').toLowerCase();
+                                const xmlKey = convertToXmlElementName(key);
                                 const value = row[key].trim();
                                 
                                 if (key === 'body') {
@@ -3629,7 +3671,7 @@
                             itemsXml += `\n        <page-attributes>`;
                             pageAttributes.forEach(attr => {
                                 if (row[attr] && row[attr].trim() !== '') {
-                                    const xmlKey = attr.replace(/([A-Z])/g, '-$1').toLowerCase();
+                                    const xmlKey = convertToXmlElementName(attr);
                                     itemsXml += `\n            <${xmlKey} xml:lang="x-default">${escapeXml(row[attr].trim())}</${xmlKey}>`;
                                 }
                             });
@@ -3731,7 +3773,7 @@
                             if (value !== undefined && value !== '') {
                                 const attrType = attributeData.Product[attr];
                                 const formattedValue = validateAndFormatValue(value, attrType);
-                                const elementName = attr.replace(/([A-Z])/g, '-$1').toLowerCase();
+                                const elementName = convertToXmlElementName(attr);
                                 // Use user-selected flags for this attribute
                                 const attrFlags = attributeFlags[attr] || {};
                                 const isSiteSpecific = attrFlags.siteSpecific || false;
@@ -3855,10 +3897,10 @@
                                     customElements.push({ key, value: row[key] || '' });
                                 } else if (isStandardAttribute && isPageAttribute) {
                                     // Page attributes should be wrapped in page-attributes container
-                                    const elementName = mappedKey.replace(/([A-Z])/g, '-$1').toLowerCase();
+                                    const elementName = convertToXmlElementName(mappedKey);
                                     pageElements.push({ key: mappedKey, elementName, value: row[key] || '' });
                                 } else if (isStandardAttribute) {
-                                    const elementName = mappedKey.replace(/([A-Z])/g, '-$1').toLowerCase();
+                                    const elementName = convertToXmlElementName(mappedKey);
                                     standardElements.push({ key: mappedKey, elementName, value: row[key] || '' });
                                 } else if (isSelected) {
                                     // Fallback for selected attributes that aren't standard or explicitly custom
@@ -3929,7 +3971,7 @@
                         const isLocalizable = attrFlags.localizable || 
                             currentLocalizableAttrs.some(attr => 
                                 attr.toLowerCase() === element.key.toLowerCase() || 
-                                attr.replace(/([A-Z])/g, '-$1').toLowerCase() === element.elementName
+                                convertToXmlElementName(attr) === element.elementName
                             );
                         const isSiteSpecific = attrFlags.siteSpecific || false;
                         
