@@ -1941,7 +1941,8 @@
                     }
                     
                     const attrFlags = attributeFlags[attr];
-                    const isCustom = !currentStandardAttributes[attr];
+                    // Check if it's a custom attribute (prioritize custom if both standard and custom)
+                    const isCustom = customAttributeTypes.hasOwnProperty(attr) || !currentStandardAttributes[attr];
                     
                     const div = document.createElement('div');
                     div.classList.add('bg-white', 'p-3', 'rounded-lg', 'shadow-sm', 'border', 'border-slate-200', 'fade-in');
@@ -1952,7 +1953,7 @@
                     const typeLabel = isCustom ? 'Custom' : 'Standard';
                     const typeLabelClass = isCustom ? 'text-indigo-600 bg-indigo-50' : 'text-green-600 bg-green-50';
                     
-                    // Convert to XML element name for display if it's a standard attribute
+                    // Convert to XML element name for display if it's a standard attribute (and not custom)
                     const displayName = isCustom ? attr : convertToXmlElementName(attr);
                     
                     // Build the content with checkboxes
