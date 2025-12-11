@@ -821,6 +821,24 @@
                         </div>
                         <div id="product-sets-no-attributes" class="text-center py-4 text-slate-500 mt-2"><p class="text-sm italic">No attributes selected yet.</p></div>
                         
+                        <!-- Locale Input (for localizable attributes) -->
+                        <div id="product-sets-locale-section" class="mt-6 p-4 bg-purple-50 rounded-lg border border-purple-200 hidden">
+                            <label for="product-sets-locale-input" class="block text-sm font-medium text-purple-900 mb-2 flex items-center">
+                                <svg class="w-4 h-4 mr-1.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7 2a1 1 0 011 1v1h3a1 1 0 110 2H9.578a18.87 18.87 0 01-1.724 4.78c.29.354.596.696.914 1.026a1 1 0 11-1.44 1.389c-.188-.196-.373-.396-.554-.6a19.098 19.098 0 01-3.107 3.567 1 1 0 01-1.334-1.49 17.087 17.087 0 003.13-3.733 18.992 18.992 0 01-1.487-2.494 1 1 0 111.79-.89c.234.47.489.928.764 1.372.417-.934.752-1.913.997-2.927H3a1 1 0 110-2h3V3a1 1 0 011-1zm6 6a1 1 0 01.894.553l2.991 5.982a.869.869 0 01.02.037l.99 1.98a1 1 0 11-1.79.895L15.383 16h-4.764l-.724 1.447a1 1 0 11-1.788-.894l.99-1.98.019-.038 2.99-5.982A1 1 0 0113 8zm-1.382 6h2.764L13 11.236 11.618 14z" clip-rule="evenodd"/></svg>
+                                Locale for Localizable Attributes
+                            </label>
+                            <input type="text" id="product-sets-locale-input" placeholder="ex: default, en_US" value="default" class="w-full px-4 py-2 bg-white border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-shadow text-sm">
+                        </div>
+                        
+                        <!-- Site ID Input (for site-specific attributes) -->
+                        <div id="product-sets-site-section" class="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200 hidden">
+                            <label for="product-sets-site-input" class="block text-sm font-medium text-blue-900 mb-2 flex items-center">
+                                <svg class="w-4 h-4 mr-1.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.977 5.977 0 0116 10c0 .34-.028.675-.083 1H15a2 2 0 00-2 2v2.197A5.973 5.973 0 0110 16v-2a2 2 0 00-2-2 2 2 0 01-2-2 2 2 0 00-1.668-1.973z" clip-rule="evenodd"/></svg>
+                                Site ID for Site-Specific Attributes
+                            </label>
+                            <input type="text" id="product-sets-site-input" placeholder="ex: RefArch" class="w-full px-4 py-2 bg-white border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow text-sm">
+                        </div>
+                        
                         <!-- CSV Structure Display -->
                         <div class="mt-6">
                             <h4 class="font-semibold text-slate-800 mb-3 text-sm border-b pb-2">CSV Structure:</h4>
@@ -837,24 +855,6 @@
                             </div>
                         </div>
                     </div>
-                </div>
-                
-                <!-- Locale Input (for localizable attributes) -->
-                <div id="product-sets-locale-section" class="mt-6 p-4 bg-purple-50 rounded-lg border border-purple-200 hidden">
-                    <label for="product-sets-locale-input" class="block text-sm font-medium text-purple-900 mb-2 flex items-center">
-                        <svg class="w-4 h-4 mr-1.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7 2a1 1 0 011 1v1h3a1 1 0 110 2H9.578a18.87 18.87 0 01-1.724 4.78c.29.354.596.696.914 1.026a1 1 0 11-1.44 1.389c-.188-.196-.373-.396-.554-.6a19.098 19.098 0 01-3.107 3.567 1 1 0 01-1.334-1.49 17.087 17.087 0 003.13-3.733 18.992 18.992 0 01-1.487-2.494 1 1 0 111.79-.89c.234.47.489.928.764 1.372.417-.934.752-1.913.997-2.927H3a1 1 0 110-2h3V3a1 1 0 011-1zm6 6a1 1 0 01.894.553l2.991 5.982a.869.869 0 01.02.037l.99 1.98a1 1 0 11-1.79.895L15.383 16h-4.764l-.724 1.447a1 1 0 11-1.788-.894l.99-1.98.019-.038 2.99-5.982A1 1 0 0113 8zm-1.382 6h2.764L13 11.236 11.618 14z" clip-rule="evenodd"/></svg>
-                        Locale for Localizable Attributes
-                    </label>
-                    <input type="text" id="product-sets-locale-input" placeholder="ex: default, en_US" value="default" class="w-full px-4 py-2 bg-white border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-shadow text-sm">
-                </div>
-                
-                <!-- Site ID Input (for site-specific attributes) -->
-                <div id="product-sets-site-section" class="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200 hidden">
-                    <label for="product-sets-site-input" class="block text-sm font-medium text-blue-900 mb-2 flex items-center">
-                        <svg class="w-4 h-4 mr-1.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.977 5.977 0 0116 10c0 .34-.028.675-.083 1H15a2 2 0 00-2 2v2.197A5.973 5.973 0 0110 16v-2a2 2 0 00-2-2 2 2 0 01-2-2 2 2 0 00-1.668-1.973z" clip-rule="evenodd"/></svg>
-                        Site ID for Site-Specific Attributes
-                    </label>
-                    <input type="text" id="product-sets-site-input" placeholder="ex: RefArch" class="w-full px-4 py-2 bg-white border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow text-sm">
                 </div>
                 
                 <!-- Custom Attributes Section (Full Width) -->
@@ -1868,6 +1868,32 @@
                     siteSectionMoved.classList.add('hidden');
                 }
             };
+            
+            const updateProductSetsLocaleAndSiteSections = () => {
+                // Check if any selected attribute is localizable
+                const hasLocalizableAttr = Array.from(productSetsSelectedAttributes).some(attr => {
+                    return attributeFlags[attr]?.localizable || false;
+                }) || productSetsCustomAttributes.some(attr => attr.localizable);
+                
+                // Check if any selected attribute is site-specific
+                const hasSiteSpecificAttr = Array.from(productSetsSelectedAttributes).some(attr => {
+                    return attributeFlags[attr]?.siteSpecific || false;
+                }) || productSetsCustomAttributes.some(attr => attr.siteSpecific);
+                
+                // Show/hide locale section based on localizable attributes
+                if (hasLocalizableAttr) {
+                    productSetsLocaleSection.classList.remove('hidden');
+                } else {
+                    productSetsLocaleSection.classList.add('hidden');
+                }
+                
+                // Show/hide site section based on site-specific attributes
+                if (hasSiteSpecificAttr) {
+                    productSetsSiteSection.classList.remove('hidden');
+                } else {
+                    productSetsSiteSection.classList.add('hidden');
+                }
+            };
 
             const getTypeColorClass = (type) => {
                 const typeColors = {
@@ -2620,7 +2646,7 @@
                             attributeFlags[attr].siteSpecific = false;
                             siteSpecificCheckbox.checked = false;
                         }
-                        updateLocaleAndSiteSections();
+                        updateProductSetsLocaleAndSiteSections();
                     });
                     
                     siteSpecificCheckbox.addEventListener('change', (e) => {
@@ -2629,7 +2655,7 @@
                             attributeFlags[attr].localizable = false;
                             localizableCheckbox.checked = false;
                         }
-                        updateLocaleAndSiteSections();
+                        updateProductSetsLocaleAndSiteSections();
                     });
                 });
                 
@@ -2669,25 +2695,7 @@
                 }
                 
                 // Update locale and site sections visibility for Product Sets
-                const hasLocalizableAttr = Array.from(productSetsSelectedAttributes).some(attr => {
-                    return attributeFlags[attr]?.localizable || false;
-                }) || productSetsCustomAttributes.some(attr => attr.localizable);
-                
-                const hasSiteSpecificAttr = Array.from(productSetsSelectedAttributes).some(attr => {
-                    return attributeFlags[attr]?.siteSpecific || false;
-                }) || productSetsCustomAttributes.some(attr => attr.siteSpecific);
-                
-                if (hasLocalizableAttr) {
-                    productSetsLocaleSection.classList.remove('hidden');
-                } else {
-                    productSetsLocaleSection.classList.add('hidden');
-                }
-                
-                if (hasSiteSpecificAttr) {
-                    productSetsSiteSection.classList.remove('hidden');
-                } else {
-                    productSetsSiteSection.classList.add('hidden');
-                }
+                updateProductSetsLocaleAndSiteSections();
             };
 
             const handleFileSelect = (file) => {
@@ -4566,11 +4574,11 @@
                     productSetsSection.classList.add('hidden');
                     couponCodeSection.classList.add('hidden');
                 } else if (currentObjectType === 'ProductSets') {
-                    // Show locale and site sections for Product Sets (similar to Product and Variation Groups)
+                    // Product Sets uses its own locale/site sections that appear dynamically
                     productSetsHelp.classList.remove('hidden'); // Show help section
-                    localeSection.classList.remove('hidden');
+                    localeSection.classList.add('hidden');
                     localeSectionMoved.classList.add('hidden');
-                    siteSection.classList.remove('hidden');
+                    siteSection.classList.add('hidden');
                     siteSectionMoved.classList.add('hidden');
                     productAttributesDescription.classList.add('hidden');
                     attributesSection.classList.add('hidden');
