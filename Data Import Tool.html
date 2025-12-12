@@ -6,6 +6,7 @@
     <title>Salesforce B2C Commerce Data Import Tool</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Salesforce+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -135,9 +136,10 @@
                 <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
                     <h3 class="text-xs font-medium text-slate-600 mb-2 uppercase tracking-wide">On-site Search</h3>
                     <div class="space-y-1" id="onsite-search-options">
-                        <div class="p-1.5 text-sm text-slate-500 italic">
-                            Coming Soon
-                        </div>
+                        <label class="flex items-center space-x-2 cursor-pointer p-1.5 rounded hover:bg-white transition-colors">
+                            <input type="radio" name="objectType" value="SearchRefinementDefinitions" class="h-3 w-3 text-indigo-600 focus:ring-indigo-500 border-gray-300">
+                            <span class="text-sm font-medium text-slate-700">Refinement Definitions (Filters)</span>
+                        </label>
                     </div>
                 </div>
 
@@ -1244,6 +1246,115 @@
                 </div>
             </div>
             
+            <!-- Search Refinement Definitions Section -->
+            <div id="search-refinement-definitions-section" class="hidden">
+                <div class="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                    <h3 class="text-xl font-semibold mb-4 text-slate-900 text-center">Search Refinement Definitions CSV Template</h3>
+                    
+                    <!-- Collapsible Help Section -->
+                    <div class="mb-6">
+                        <div class="bg-blue-50 rounded-lg border border-blue-200">
+                            <button type="button" class="w-full p-4 text-left flex items-center justify-between hover:bg-blue-100 transition-colors rounded-lg" onclick="this.parentElement.querySelector('.help-content').classList.toggle('hidden'); this.querySelector('.toggle-icon').classList.toggle('rotate-180');">
+                                <h3 class="font-semibold text-blue-900">📝 How to Use Search Refinement Definitions</h3>
+                                <svg class="toggle-icon w-5 h-5 text-blue-900 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            <div class="help-content p-4 pt-0 hidden">
+                                <p class="text-sm text-blue-800 mb-3">Search refinement definitions (filters) control how products can be filtered on your storefront. This tool generates a CSV template with pre-filled examples.</p>
+                                <ol class="text-sm text-blue-800 space-y-2 ml-4 list-decimal">
+                                    <li><strong>Generate template:</strong> Click "Generate CSV Template" to download a file with example data</li>
+                                    <li><strong>Modify examples:</strong> The template includes 4 working examples - edit or delete them to create your refinements</li>
+                                    <li><strong>Add more rows:</strong> Copy example rows or add new ones following the same pattern</li>
+                                    <li><strong>Upload & convert:</strong> Upload the completed CSV in Step 3, enter Catalog ID, and generate XML</li>
+                                </ol>
+                                <div class="bg-white p-3 rounded border border-blue-200 mt-3">
+                                    <p class="text-xs font-semibold text-blue-900 mb-2">How Rows Work:</p>
+                                    <ul class="text-xs text-blue-700 space-y-1 ml-3 list-disc">
+                                        <li><strong>"definition" row:</strong> Defines a refinement with its basic configuration</li>
+                                        <li><strong>"bucket" rows:</strong> Follow the definition to group values (if needed)</li>
+                                        <li><strong>Same Refinement ID:</strong> Links bucket rows to their parent definition</li>
+                                        <li><strong>Edit examples:</strong> The template includes complete working examples you can modify</li>
+                                        <li><strong>Add locales:</strong> Add columns like "Display Name (de_DE)" to support more languages</li>
+                                    </ul>
+                                </div>
+                                <div class="bg-white p-3 rounded border border-blue-200 mt-3">
+                                    <p class="text-xs font-semibold text-blue-900 mb-1">💡 4 Example Types Included</p>
+                                    <div class="text-xs text-blue-700 space-y-1">
+                                        <p><strong>Category:</strong> Simple category filter (1 row)</p>
+                                        <p><strong>Brand:</strong> Attribute with no buckets (1 row)</p>
+                                        <p><strong>Color:</strong> Attribute with value buckets (5 rows total)</p>
+                                        <p><strong>Price:</strong> Price ranges with thresholds (5 rows total)</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Column Reference -->
+                    <div class="bg-white p-4 rounded-lg border border-slate-300 mb-6">
+                        <h4 class="font-semibold text-slate-800 mb-3">Column Reference (18 columns in template, expandable):</h4>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                            <div class="bg-slate-50 p-3 rounded border border-slate-200">
+                                <p class="text-xs font-semibold text-slate-700 mb-2">Core Columns:</p>
+                                <ul class="text-xs text-slate-600 space-y-1 ml-3 list-disc">
+                                    <li><strong>Refinement ID:</strong> Unique identifier to group rows</li>
+                                    <li><strong>Row Type:</strong> "definition" or "bucket"</li>
+                                    <li><strong>Refinement Type:</strong> category, attribute, or price</li>
+                                    <li><strong>Bucket Type:</strong> none, values, or thresholds</li>
+                                </ul>
+                            </div>
+                            <div class="bg-slate-50 p-3 rounded border border-slate-200">
+                                <p class="text-xs font-semibold text-slate-700 mb-2">Configuration:</p>
+                                <ul class="text-xs text-slate-600 space-y-1 ml-3 list-disc">
+                                    <li><strong>Attribute ID:</strong> System attribute (e.g., "refinementColor", "brand")</li>
+                                    <li><strong>System Flag:</strong> true/false - system vs custom attribute</li>
+                                    <li><strong>Value Set:</strong> refinement-category, search-result, or blank</li>
+                                    <li><strong>Sort Mode:</strong> category-position, value-name, value-count</li>
+                                    <li><strong>Sort Direction:</strong> ascending or descending</li>
+                                    <li><strong>Unbucketed Values Mode:</strong> show-values or hide-values</li>
+                                    <li><strong>Cutoff Threshold:</strong> Number (e.g., 5)</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                            <div class="bg-slate-50 p-3 rounded border border-slate-200">
+                                <p class="text-xs font-semibold text-slate-700 mb-2">Display Names (expandable):</p>
+                                <ul class="text-xs text-slate-600 space-y-1 ml-3 list-disc">
+                                    <li>Template includes: default, en_US, fr_FR</li>
+                                    <li>Add more by creating "Display Name (locale)" columns</li>
+                                    <li>Example: "Display Name (de_DE)", "Display Name (ja_JP)"</li>
+                                    <li>At least "Display Name (default)" is required</li>
+                                </ul>
+                            </div>
+                            <div class="bg-slate-50 p-3 rounded border border-slate-200">
+                                <p class="text-xs font-semibold text-slate-700 mb-2">Bucket Fields (bucket rows only):</p>
+                                <ul class="text-xs text-slate-600 space-y-1 ml-3 list-disc">
+                                    <li><strong>Bucket Currency:</strong> USD, EUR, GBP, etc. (price buckets)</li>
+                                    <li><strong>Bucket Threshold:</strong> Upper limit (price buckets)</li>
+                                    <li><strong>Bucket Value List:</strong> Comma-separated values (e.g., "beige,cream")</li>
+                                    <li><strong>Bucket Presentation ID:</strong> Bucket ID (e.g., "beige")</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="p-3 bg-amber-50 rounded border border-amber-200">
+                            <p class="text-xs font-semibold text-amber-900 mb-1">Template Includes Examples:</p>
+                            <p class="text-xs text-amber-800">The CSV template includes 12 pre-filled example rows for all refinement types. Modify or delete them as needed for your data.</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Generate CSV Button -->
+                    <div class="text-center">
+                        <button id="generate-refinement-definitions-excel-btn" class="px-8 py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all transform hover:scale-105 shadow-lg">
+                            Generate CSV Template
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
             <!-- Image Mapping Section -->
             <div id="image-mapping-section" class="hidden">
                 <div class="bg-slate-50 p-6 rounded-xl border border-slate-200">
@@ -1570,6 +1681,7 @@
             const categoryAssignmentSection = document.getElementById('category-assignment-section');
             const categoryPositionSection = document.getElementById('category-position-section');
             const categoryAssignmentRulesSection = document.getElementById('category-assignment-rules-section');
+            const searchRefinementDefinitionsSection = document.getElementById('search-refinement-definitions-section');
             const imageMappingSection = document.getElementById('image-mapping-section');
             const standardAttributesContainer = document.getElementById('standard-attributes');
             const customAttributesTableBody = document.getElementById('custom-attributes-table-body');
@@ -1585,6 +1697,7 @@
             const generateCategoryAssignmentCsvBtn = document.getElementById('generate-category-assignment-csv-btn');
             const generateCategoryPositionCsvBtn = document.getElementById('generate-category-position-csv-btn');
             const generateCategoryAssignmentRulesCsvBtn = document.getElementById('generate-category-assignment-rules-csv-btn');
+            const generateRefinementDefinitionsExcelBtn = document.getElementById('generate-refinement-definitions-excel-btn');
             const generateImageMappingCsvBtn = document.getElementById('generate-image-mapping-csv-btn');
             const step3CatalogIdSection = document.getElementById('step3-catalog-id-section');
             const step3CatalogIdInput = document.getElementById('step3-catalog-id-input');
@@ -2413,6 +2526,65 @@
                 downloadFile(csvContent, 'text/csv', 'b2c_category_assignment_rules_template.csv');
             };
 
+
+            // Search Refinement Definitions - CSV generation with example data and dynamic locale columns
+            const generateRefinementDefinitionsExcel = () => {
+                // Define column headers - only include 3 locale examples (users can add more)
+                const headers = [
+                    'Refinement ID', 'Row Type', 'Refinement Type', 'Bucket Type', 'Attribute ID', 
+                    'System Flag', 'Value Set', 'Sort Mode', 'Sort Direction', 'Unbucketed Values Mode', 
+                    'Cutoff Threshold', 'Display Name (default)', 'Display Name (en_US)', 'Display Name (fr_FR)', 
+                    'Bucket Currency', 'Bucket Threshold', 'Bucket Value List', 'Bucket Presentation ID'
+                ];
+                
+                // All example data rows (adjusted to 3 locale columns)
+                const exampleRows = [
+                    // EXAMPLE 1: Category Refinement (1 row)
+                    ['category-ref', 'definition', 'category', 'none', '', '', '', 'category-position', '', '', '5', 'Category', '', 'Catégorie', '', '', '', ''],
+                    // EXAMPLE 2: Simple Attribute - Brand (1 row)
+                    ['brand-ref', 'definition', 'attribute', 'none', 'brand', 'true', 'search-result', 'value-name', 'ascending', '', '5', 'Brand', '', 'Par marque', '', '', '', ''],
+                    // EXAMPLE 3: Attribute with Value Buckets - Color (1 definition + 4 buckets = 5 rows)
+                    ['color-ref', 'definition', 'attribute', 'values', 'refinementColor', 'false', 'refinement-category', 'value-name', 'ascending', 'show-values', '5', 'Color', '', 'Coloris', '', '', '', ''],
+                    ['color-ref', 'bucket', '', '', '', '', '', '', '', '', '', 'Beige', '', 'Beige', '', '', 'beige', 'beige'],
+                    ['color-ref', 'bucket', '', '', '', '', '', '', '', '', '', 'Black', '', 'Noir', '', '', 'black', 'black'],
+                    ['color-ref', 'bucket', '', '', '', '', '', '', '', '', '', 'Blue', '', 'Bleu', '', '', 'blue', 'blue'],
+                    ['color-ref', 'bucket', '', '', '', '', '', '', '', '', '', 'Red', '', 'Rouge', '', '', 'red', 'red'],
+                    // EXAMPLE 4: Price with Thresholds - USD (1 definition + 4 buckets = 5 rows)
+                    ['price-usd', 'definition', 'price', 'thresholds', '', '', '', 'value-name', 'ascending', '', '5', 'Price', '', 'Prix', '', '', '', ''],
+                    ['price-usd', 'bucket', '', '', '', '', '', '', '', '', '', '$0 - $19.99', '', '0 $ - 19.99 $', 'USD', '20.0', '', ''],
+                    ['price-usd', 'bucket', '', '', '', '', '', '', '', '', '', '$20 - $49.99', '', '20 $ - 49.99 $', 'USD', '50.0', '', ''],
+                    ['price-usd', 'bucket', '', '', '', '', '', '', '', '', '', '$50 - $99.99', '', '50 $ - 99.99 $', 'USD', '100.0', '', ''],
+                    ['price-usd', 'bucket', '', '', '', '', '', '', '', '', '', '$100+', '', '100+ $', 'USD', '10000.0', '', '']
+                ];
+                
+                // Helper function to escape CSV values
+                const escapeCSV = (value) => {
+                    if (value === null || value === undefined) return '';
+                    const stringValue = String(value);
+                    // If the value contains comma, quote, or newline, wrap it in quotes and escape internal quotes
+                    if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+                        return '"' + stringValue.replace(/"/g, '""') + '"';
+                    }
+                    return stringValue;
+                };
+                
+                // Build CSV content
+                const csvRows = [];
+                
+                // Add header row
+                csvRows.push(headers.map(escapeCSV).join(','));
+                
+                // Add example data rows
+                exampleRows.forEach(row => {
+                    csvRows.push(row.map(escapeCSV).join(','));
+                });
+                
+                const csvContent = csvRows.join('\n');
+                
+                // Download the CSV file
+                downloadFile(csvContent, 'text/csv', 'b2c_refinement_definitions_template.csv');
+            };
+
             const generateImageMappingCSV = () => {
                 const selectedType = document.querySelector('input[name="imageMappingType"]:checked')?.value;
                 
@@ -2945,6 +3117,14 @@
                     skipEmptyLines: true,
                     complete: (results) => {
                         parsedCsvData = results.data;
+                        
+                        // Detect Display Name columns for dynamic locale handling (SearchRefinementDefinitions)
+                        if (results.meta && results.meta.fields) {
+                            window.csvDisplayNameColumns = results.meta.fields.filter(field => 
+                                field.startsWith('Display Name (') && field.endsWith(')')
+                            );
+                        }
+                        
                         conversionStatus.textContent = `Successfully parsed ${parsedCsvData.length} rows.`;
                         generateXmlBtn.disabled = false;
                     },
@@ -3167,7 +3347,7 @@
                 }
                 
                 // Define which object types require catalog ID
-                const catalogRequiredTypes = ['Product', 'Category', 'VariationMapping', 'ProductRecommendation', 'CategoryAssignment', 'CategoryPosition', 'CategoryAssignmentRules', 'ImageMapping', 'VariationGroup', 'ProductSets'];
+                const catalogRequiredTypes = ['Product', 'Category', 'VariationMapping', 'ProductRecommendation', 'CategoryAssignment', 'CategoryPosition', 'CategoryAssignmentRules', 'SearchRefinementDefinitions', 'ImageMapping', 'VariationGroup', 'ProductSets'];
                 
                 // Validate Catalog ID for types that require it
                 if (catalogRequiredTypes.includes(currentObjectType)) {
@@ -3443,6 +3623,73 @@
                             primaryCategoryAssignment,
                             classificationCategoryAssignment
                         });
+                        
+                        return;
+                    }
+
+                    // Handle SearchRefinementDefinitions separately - hierarchical structure with dynamic locales
+                    if (currentObjectType === 'SearchRefinementDefinitions') {
+                        const refinementId = row['Refinement ID'];
+                        const rowType = row['Row Type'];
+                        
+                        if (!refinementId || !rowType) return; // Skip incomplete rows
+                        
+                        // Initialize storage
+                        if (!window.searchRefinementDefinitions) {
+                            window.searchRefinementDefinitions = {};
+                        }
+                        
+                        if (!window.searchRefinementDefinitions[refinementId]) {
+                            window.searchRefinementDefinitions[refinementId] = {
+                                definition: null,
+                                buckets: []
+                            };
+                        }
+                        
+                        // Dynamically extract display names from all "Display Name (...)" columns
+                        const extractDisplayNames = (row) => {
+                            const displayNames = {};
+                            const displayNameColumns = window.csvDisplayNameColumns || [];
+                            
+                            displayNameColumns.forEach(columnName => {
+                                // Extract locale from "Display Name (locale)" format
+                                const match = columnName.match(/Display Name \((.+)\)/);
+                                if (match) {
+                                    const locale = match[1];
+                                    const value = row[columnName] || '';
+                                    if (value) {
+                                        displayNames[locale] = value;
+                                    }
+                                }
+                            });
+                            
+                            return displayNames;
+                        };
+                        
+                        if (rowType.toLowerCase() === 'definition') {
+                            // Store definition row with dynamic display names
+                            window.searchRefinementDefinitions[refinementId].definition = {
+                                refinementType: row['Refinement Type'],
+                                bucketType: row['Bucket Type'],
+                                attributeId: row['Attribute ID'] || '',
+                                systemFlag: row['System Flag'] || 'false',
+                                valueSet: row['Value Set'] || '',
+                                sortMode: row['Sort Mode'] || '',
+                                sortDirection: row['Sort Direction'] || '',
+                                unbucketedValuesMode: row['Unbucketed Values Mode'] || '',
+                                cutoffThreshold: row['Cutoff Threshold'] || '',
+                                displayNames: extractDisplayNames(row)
+                            };
+                        } else if (rowType.toLowerCase() === 'bucket') {
+                            // Store bucket row with dynamic display names
+                            window.searchRefinementDefinitions[refinementId].buckets.push({
+                                currency: row['Bucket Currency'] || '',
+                                threshold: row['Bucket Threshold'] || '',
+                                valueList: row['Bucket Value List'] || '',
+                                presentationId: row['Bucket Presentation ID'] || '',
+                                displayNames: extractDisplayNames(row)
+                            });
+                        }
                         
                         return;
                     }
@@ -4587,6 +4834,7 @@
                     categoryAssignmentSection.classList.add('hidden');
                     categoryPositionSection.classList.add('hidden');
                     categoryAssignmentRulesSection.classList.add('hidden');
+                    searchRefinementDefinitionsSection.classList.add('hidden');
                     imageMappingSection.classList.add('hidden');
                     variationGroupSection.classList.add('hidden');
                     pricesSection.classList.add('hidden');
@@ -4611,6 +4859,7 @@
                     categoryAssignmentSection.classList.add('hidden');
                     categoryPositionSection.classList.add('hidden');
                     categoryAssignmentRulesSection.classList.add('hidden');
+                    searchRefinementDefinitionsSection.classList.add('hidden');
                     imageMappingSection.classList.add('hidden');
                     variationGroupSection.classList.add('hidden');
                     pricesSection.classList.add('hidden');
@@ -4658,6 +4907,7 @@
                     categoryAssignmentSection.classList.add('hidden');
                     categoryPositionSection.classList.remove('hidden');
                     categoryAssignmentRulesSection.classList.add('hidden');
+                    searchRefinementDefinitionsSection.classList.add('hidden');
                     imageMappingSection.classList.add('hidden');
                     variationGroupSection.classList.add('hidden');
                     pricesSection.classList.add('hidden');
@@ -4681,6 +4931,31 @@
                     categoryAssignmentSection.classList.add('hidden');
                     categoryPositionSection.classList.add('hidden');
                     categoryAssignmentRulesSection.classList.remove('hidden');
+                    searchRefinementDefinitionsSection.classList.add('hidden');
+                    imageMappingSection.classList.add('hidden');
+                    variationGroupSection.classList.add('hidden');
+                    pricesSection.classList.add('hidden');
+                    inventorySection.classList.add('hidden');
+                    productSetsSection.classList.add('hidden');
+                    couponCodeSection.classList.add('hidden');
+                } else if (currentObjectType === 'SearchRefinementDefinitions') {
+                    // Hide locale and attributes sections for Search Refinement Definitions
+                    localeSection.classList.add('hidden');
+                    localeSectionMoved.classList.add('hidden');
+                    siteSection.classList.add('hidden');
+                    siteSectionMoved.classList.add('hidden');
+                    productAttributesDescription.classList.add('hidden');
+                    attributesSection.classList.add('hidden');
+                    customAttributesSection.classList.add('hidden');
+                    contentAssetSection.classList.add('hidden');
+                    libraryFolderSection.classList.add('hidden');
+                    staticCustomerGroupSection.classList.add('hidden');
+                    variationMappingSection.classList.add('hidden');
+                    productRecommendationSection.classList.add('hidden');
+                    categoryAssignmentSection.classList.add('hidden');
+                    categoryPositionSection.classList.add('hidden');
+                    categoryAssignmentRulesSection.classList.add('hidden');
+                    searchRefinementDefinitionsSection.classList.remove('hidden');
                     imageMappingSection.classList.add('hidden');
                     variationGroupSection.classList.add('hidden');
                     pricesSection.classList.add('hidden');
@@ -4705,6 +4980,7 @@
                     categoryAssignmentSection.classList.add('hidden');
                     categoryPositionSection.classList.add('hidden');
                     categoryAssignmentRulesSection.classList.add('hidden');
+                    searchRefinementDefinitionsSection.classList.add('hidden');
                     imageMappingSection.classList.add('hidden');
                     variationGroupSection.classList.remove('hidden');
                     pricesSection.classList.add('hidden');
@@ -4752,6 +5028,7 @@
                     categoryAssignmentSection.classList.add('hidden');
                     categoryPositionSection.classList.add('hidden');
                     categoryAssignmentRulesSection.classList.add('hidden');
+                    searchRefinementDefinitionsSection.classList.add('hidden');
                     imageMappingSection.classList.add('hidden');
                     variationGroupSection.classList.add('hidden');
                     pricesSection.classList.remove('hidden');
@@ -4776,6 +5053,7 @@
                     categoryAssignmentSection.classList.add('hidden');
                     categoryPositionSection.classList.add('hidden');
                     categoryAssignmentRulesSection.classList.add('hidden');
+                    searchRefinementDefinitionsSection.classList.add('hidden');
                     imageMappingSection.classList.add('hidden');
                     variationGroupSection.classList.add('hidden');
                     pricesSection.classList.add('hidden');
@@ -4800,6 +5078,7 @@
                     categoryAssignmentSection.classList.add('hidden');
                     categoryPositionSection.classList.add('hidden');
                     categoryAssignmentRulesSection.classList.add('hidden');
+                    searchRefinementDefinitionsSection.classList.add('hidden');
                     imageMappingSection.classList.add('hidden');
                     variationGroupSection.classList.add('hidden');
                     pricesSection.classList.add('hidden');
@@ -4836,6 +5115,7 @@
                     categoryAssignmentSection.classList.add('hidden');
                     categoryPositionSection.classList.add('hidden');
                     categoryAssignmentRulesSection.classList.add('hidden');
+                    searchRefinementDefinitionsSection.classList.add('hidden');
                     imageMappingSection.classList.add('hidden');
                     variationGroupSection.classList.add('hidden');
                     pricesSection.classList.add('hidden');
@@ -4860,6 +5140,7 @@
                     categoryAssignmentSection.classList.add('hidden');
                     categoryPositionSection.classList.add('hidden');
                     categoryAssignmentRulesSection.classList.add('hidden');
+                    searchRefinementDefinitionsSection.classList.add('hidden');
                     imageMappingSection.classList.add('hidden');
                     variationGroupSection.classList.add('hidden');
                     pricesSection.classList.add('hidden');
@@ -4884,6 +5165,7 @@
                     categoryAssignmentSection.classList.add('hidden');
                     categoryPositionSection.classList.add('hidden');
                     categoryAssignmentRulesSection.classList.add('hidden');
+                    searchRefinementDefinitionsSection.classList.add('hidden');
                     imageMappingSection.classList.add('hidden');
                     variationGroupSection.classList.add('hidden');
                     pricesSection.classList.add('hidden');
@@ -4915,6 +5197,7 @@
                     categoryAssignmentSection.classList.add('hidden');
                     categoryPositionSection.classList.add('hidden');
                     categoryAssignmentRulesSection.classList.add('hidden');
+                    searchRefinementDefinitionsSection.classList.add('hidden');
                     imageMappingSection.classList.add('hidden');
                     variationGroupSection.classList.add('hidden');
                     pricesSection.classList.add('hidden');
@@ -4958,6 +5241,7 @@
                     categoryAssignmentSection.classList.add('hidden');
                     categoryPositionSection.classList.add('hidden');
                     categoryAssignmentRulesSection.classList.add('hidden');
+                    searchRefinementDefinitionsSection.classList.add('hidden');
                     imageMappingSection.classList.add('hidden');
                     variationGroupSection.classList.add('hidden');
                     pricesSection.classList.add('hidden');
@@ -5030,6 +5314,7 @@
             generateCategoryAssignmentCsvBtn.addEventListener('click', generateCategoryAssignmentCSV);
             generateCategoryPositionCsvBtn.addEventListener('click', generateCategoryPositionCSV);
             generateCategoryAssignmentRulesCsvBtn.addEventListener('click', generateCategoryAssignmentRulesCSV);
+            generateRefinementDefinitionsExcelBtn.addEventListener('click', generateRefinementDefinitionsExcel);
             generateImageMappingCsvBtn.addEventListener('click', generateImageMappingCSV);
             generateVariationGroupCsvBtn.addEventListener('click', generateVariationGroupCSV);
             generatePricesCsvBtn.addEventListener('click', generatePricesCSV);
