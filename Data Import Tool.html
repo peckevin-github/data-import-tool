@@ -2176,11 +2176,11 @@
                 generateSheetBtn.disabled = sortedAttributes.length === 0;
                 sortedAttributes.forEach(attr => {
                     // Initialize flags with defaults if not already set
+                    // Default to unchecked - user must intentionally check these boxes
                     if (!attributeFlags[attr]) {
-                        const localizableAttrs = getLocalizableAttributes();
                         attributeFlags[attr] = {
-                            localizable: localizableAttrs.includes(attr),
-                            siteSpecific: siteSpecificAttributes.includes(attr) // Only Products have site-specific standard attributes
+                            localizable: false,
+                            siteSpecific: false
                         };
                     }
                     
@@ -2458,7 +2458,14 @@
             };
 
             const downloadFile = (content, mimeType, filename) => {
-                const blob = new Blob([content], { type: mimeType });
+                // Add UTF-8 BOM for CSV files to ensure proper encoding recognition
+                // UTF-8 BOM is the byte sequence 0xEF 0xBB 0xBF
+                let fileContent = content;
+                if (mimeType === 'text/csv') {
+                    const BOM = '\uFEFF';
+                    fileContent = BOM + content;
+                }
+                const blob = new Blob([fileContent], { type: mimeType + ';charset=utf-8' });
                 const url = URL.createObjectURL(blob);
                 const link = document.createElement("a");
                 link.setAttribute("href", url);
@@ -2479,7 +2486,7 @@
                 }
                 
                 if (selectedAttributes.size === 0 || !currentObjectType) return;
-                const selectedLocale = localeInputGlobal.value.trim() || 'default';
+                const selectedLocale = normalizeLocale(localeInputGlobal.value.trim() || 'default');
                 const headers = [`${currentObjectType}ID`, ...Array.from(selectedAttributes).sort()];
                 const csvContent = headers.join(',');
                 const localeString = selectedLocale !== 'default' ? `_${selectedLocale}` : '';
@@ -2881,10 +2888,11 @@
                 const sortedStandardAttrs = Array.from(productSetsSelectedAttributes).sort();
                 sortedStandardAttrs.forEach(attr => {
                     // Initialize flags with defaults if not already set
+                    // Default to unchecked - user must intentionally check these boxes
                     if (!attributeFlags[attr]) {
                         attributeFlags[attr] = {
-                            localizable: localizableProductAttributes.includes(attr),
-                            siteSpecific: siteSpecificAttributes.includes(attr)
+                            localizable: false,
+                            siteSpecific: false
                         };
                     }
                     
@@ -3317,13 +3325,15 @@
                 return str.toString().replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F-\x9F]/g, '');
             };
 
-            const escapeXml = (unsafe) => {
+            const escapeXml = (unsafe, preserveUnicode = false) => {
                 if (unsafe === null || unsafe === undefined) return '';
                 
                 // First fix replacement characters from encoding issues
                 let safe = fixReplacementCharacters(unsafe);
-                // Then normalize Unicode characters
-                safe = normalizeUnicodeCharacters(safe);
+                // Then normalize Unicode characters (skip for locale-specific data to preserve accented characters)
+                if (!preserveUnicode) {
+                    safe = normalizeUnicodeCharacters(safe);
+                }
                 // Remove invalid XML chars
                 safe = removeInvalidXmlCharacters(safe);
                 
@@ -3337,6 +3347,31 @@
                         case '"': return '&quot;';
                     }
                 });
+            };
+
+            // Normalize locale format: convert underscores to hyphens (e.g., "fr_FR" -> "fr-FR")
+            // Business Manager UI uses underscores, but XML requires hyphens
+            const normalizeLocale = (locale) => {
+                if (!locale || locale === 'default' || locale === 'x-default') {
+                    return locale;
+                }
+                // Convert underscore to hyphen for XML compatibility
+                return locale.replace(/_/g, '-');
+            };
+
+            // Format XML value for locale-specific attributes - uses CDATA to preserve special characters
+            const formatXmlValueForLocale = (value, locale) => {
+                if (!value) return '';
+                
+                // Use CDATA for any non-default locale to preserve accented characters and special characters
+                if (locale && locale !== 'default' && locale !== 'x-default') {
+                    // Only remove invalid XML control characters, but preserve all valid Unicode including accented letters
+                    let safe = removeInvalidXmlCharacters(value.toString());
+                    return `<![CDATA[${safe}]]>`;
+                } else {
+                    // Use standard escaping for default locale (with normalization)
+                    return escapeXml(value, false);
+                }
             };
 
             const generateXML = () => {
@@ -3430,7 +3465,7 @@
                     : (currentObjectType === 'Inventory')
                     ? 'inventory'
                     : '';
-                const selectedLocale = localeInputGlobal.value.trim() || 'default';
+                const selectedLocale = normalizeLocale(localeInputGlobal.value.trim() || 'default');
                 const siteId = siteIdInputGlobal.value.trim();
                 const useSiteSpecific = !!siteId; // Boolean flag to indicate if site-specific attributes should be included
                 const idField = `${currentObjectType}ID`;
@@ -4055,16 +4090,23 @@
                         const contentId = row['ContentAssetID'];
                         if (!contentId) return; // Skip rows without content ID
                         
+                        // Get the content locale (defaults to 'x-default' if not specified)
+                        const contentLocale = normalizeLocale(contentLocaleSelect ? contentLocaleSelect.value.trim() || 'x-default' : 'x-default');
+                        
                         itemsXml += `\n    <content content-id="${escapeXml(contentId)}">`;
                         
-                        // Handle display-name (mapped from name)
+                        // Handle display-name (mapped from name) - name is localizable
                         if (row['name']) {
-                            itemsXml += `\n        <display-name xml:lang="x-default">${escapeXml(row['name'])}</display-name>`;
+                            const localeForDisplayName = contentLocale !== 'x-default' ? contentLocale : null;
+                            const displayNameValue = formatXmlValueForLocale(row['name'], localeForDisplayName);
+                            itemsXml += `\n        <display-name xml:lang="${contentLocale}">${displayNameValue}</display-name>`;
                         }
                         
                         // Handle standard attributes (excluding page attributes and folder)
                         const pageAttributes = ['pageTitle', 'pageDescription', 'pageKeywords', 'pageURL'];
                         const skipAttributes = ['name', 'folder', ...pageAttributes];
+                        // Get predefined localizable attributes for Content Assets
+                        const contentAssetLocalizableAttrs = localizableContentAssetAttributes || [];
                         
                         Object.keys(row).forEach(key => {
                             if (key !== 'ContentAssetID' && !skipAttributes.includes(key) && row[key] && row[key].trim() !== '') {
@@ -4075,19 +4117,30 @@
                                     // Handle body as custom attribute with CDATA
                                     // Will be handled in custom attributes section
                                 } else {
-                                    itemsXml += `\n        <${xmlKey}>${escapeXml(value)}</${xmlKey}>`;
+                                    // Check if this attribute is localizable (from predefined list)
+                                    const isLocalizableAttr = contentAssetLocalizableAttrs.includes(key);
+                                    const localeForAttr = isLocalizableAttr && contentLocale !== 'x-default' ? contentLocale : null;
+                                    const attrValue = formatXmlValueForLocale(value, localeForAttr);
+                                    
+                                    if (localeForAttr) {
+                                        itemsXml += `\n        <${xmlKey} xml:lang="${contentLocale}">${attrValue}</${xmlKey}>`;
+                                    } else {
+                                        itemsXml += `\n        <${xmlKey}>${attrValue}</${xmlKey}>`;
+                                    }
                                 }
                             }
                         });
                         
-                        // Handle page attributes
+                        // Handle page attributes (all page attributes are localizable)
                         const hasPageAttrs = pageAttributes.some(attr => row[attr] && row[attr].trim() !== '');
                         if (hasPageAttrs) {
                             itemsXml += `\n        <page-attributes>`;
+                            const localeForPageAttrs = contentLocale !== 'x-default' ? contentLocale : null;
                             pageAttributes.forEach(attr => {
                                 if (row[attr] && row[attr].trim() !== '') {
                                     const xmlKey = convertToXmlElementName(attr);
-                                    itemsXml += `\n            <${xmlKey} xml:lang="x-default">${escapeXml(row[attr].trim())}</${xmlKey}>`;
+                                    const pageAttrValue = formatXmlValueForLocale(row[attr].trim(), localeForPageAttrs);
+                                    itemsXml += `\n            <${xmlKey} xml:lang="${contentLocale}">${pageAttrValue}</${xmlKey}>`;
                                 }
                             });
                             itemsXml += `\n        </page-attributes>`;
@@ -4098,15 +4151,21 @@
                         if (hasCustomAttrs) {
                             itemsXml += `\n        <custom-attributes>`;
                             
-                            // Handle body as custom attribute
+                            // Handle body as custom attribute (body is localizable)
                             if (row['body'] && row['body'].trim() !== '') {
-                                itemsXml += `\n            <custom-attribute attribute-id="body" xml:lang="x-default"><![CDATA[${row['body'].trim()}]]></custom-attribute>`;
+                                const localeForBody = contentLocale !== 'x-default' ? contentLocale : null;
+                                const bodyValue = formatXmlValueForLocale(row['body'].trim(), localeForBody);
+                                itemsXml += `\n            <custom-attribute attribute-id="body" xml:lang="${contentLocale}">${bodyValue}</custom-attribute>`;
                             }
                             
-                            // Handle other custom attributes
+                            // Handle other custom attributes (check if marked as localizable via checkbox)
                             Object.keys(customAttributeTypes).forEach(customAttr => {
                                 if (customAttr !== 'body' && row[customAttr] && row[customAttr].trim() !== '') {
-                                    itemsXml += `\n            <custom-attribute attribute-id="${customAttr}" xml:lang="x-default">${escapeXml(row[customAttr].trim())}</custom-attribute>`;
+                                    const attrFlags = attributeFlags[customAttr] || {};
+                                    const isCustomLocalizable = attrFlags.localizable || false;
+                                    const localeForCustomAttr = isCustomLocalizable && contentLocale !== 'x-default' ? contentLocale : null;
+                                    const customAttrValue = formatXmlValueForLocale(row[customAttr].trim(), localeForCustomAttr);
+                                    itemsXml += `\n            <custom-attribute attribute-id="${customAttr}" xml:lang="${contentLocale}">${customAttrValue}</custom-attribute>`;
                                 }
                             });
                             
@@ -4129,16 +4188,21 @@
                         const folderId = row['ID'];
                         if (!folderId) return; // Skip rows without folder ID
                         
+                        // Get the folder locale (defaults to 'x-default' if not specified)
+                        const folderLocale = normalizeLocale(folderLocaleSelect ? folderLocaleSelect.value.trim() || 'x-default' : 'x-default');
+                        
                         itemsXml += `\n    <folder folder-id="${escapeXml(folderId)}">`;
                         
                         // Handle display-name
                         if (row['Display Name']) {
-                            itemsXml += `\n        <display-name xml:lang="x-default">${escapeXml(row['Display Name'])}</display-name>`;
+                            const displayNameValue = formatXmlValueForLocale(row['Display Name'], folderLocale);
+                            itemsXml += `\n        <display-name xml:lang="${folderLocale}">${displayNameValue}</display-name>`;
                         }
                         
                         // Handle description
                         if (row['Description']) {
-                            itemsXml += `\n        <description xml:lang="x-default">${escapeXml(row['Description'])}</description>`;
+                            const descriptionValue = formatXmlValueForLocale(row['Description'], folderLocale);
+                            itemsXml += `\n        <description xml:lang="${folderLocale}">${descriptionValue}</description>`;
                         }
                         
                         // Handle template (empty)
@@ -4180,7 +4244,7 @@
                         const standardElements = [];
                         const pageElements = [];
                         
-                        const productSetsLocale = productSetsLocaleInput.value.trim() || 'default';
+                        const productSetsLocale = normalizeLocale(productSetsLocaleInput.value.trim() || 'default');
                         const productSetsSiteId = productSetsSiteInput.value.trim();
                         
                         productSetsSelectedAttributes.forEach(attr => {
@@ -4205,13 +4269,15 @@
                         // Add standard elements
                         standardElements.forEach(elem => {
                             let elementAttributes = '';
-                            if (elem.isLocalizable && productSetsLocale !== 'default') {
+                            const productSetsStandardLocale = elem.isLocalizable && productSetsLocale !== 'default' ? productSetsLocale : null;
+                            if (productSetsStandardLocale) {
                                 elementAttributes += ` xml:lang="${productSetsLocale}"`;
                             }
                             if (elem.isSiteSpecific && productSetsSiteId) {
                                 elementAttributes += ` site-id="${productSetsSiteId}"`;
                             }
-                            itemsXml += `\n        <${elem.elementName}${elementAttributes}>${escapeXml(elem.value)}</${elem.elementName}>`;
+                            const productSetsStandardValue = formatXmlValueForLocale(elem.value, productSetsStandardLocale);
+                            itemsXml += `\n        <${elem.elementName}${elementAttributes}>${productSetsStandardValue}</${elem.elementName}>`;
                         });
                         
                         // Add page attributes if any
@@ -4219,15 +4285,13 @@
                             itemsXml += `\n        <page-attributes>`;
                             pageElements.forEach(elem => {
                                 let elementAttributes = '';
-                                if (productSetsLocale !== 'default') {
-                                    elementAttributes += ` xml:lang="${productSetsLocale}"`;
-                                } else {
-                                    elementAttributes += ` xml:lang="x-default"`;
-                                }
+                                const productSetsPageLocale = productSetsLocale !== 'default' ? productSetsLocale : 'x-default';
+                                elementAttributes += ` xml:lang="${productSetsPageLocale}"`;
                                 if (productSetsSiteId) {
                                     elementAttributes += ` site-id="${productSetsSiteId}"`;
                                 }
-                                itemsXml += `\n            <${elem.elementName}${elementAttributes}>${escapeXml(elem.value)}</${elem.elementName}>`;
+                                const productSetsPageValue = formatXmlValueForLocale(elem.value, productSetsLocale !== 'default' ? productSetsLocale : null);
+                                itemsXml += `\n            <${elem.elementName}${elementAttributes}>${productSetsPageValue}</${elem.elementName}>`;
                             });
                             itemsXml += `\n        </page-attributes>`;
                         }
@@ -4244,7 +4308,8 @@
                                     let attributeString = ` attribute-id="${escapeXml(attr.id)}"`;
                                     
                                     // Add locale attribute if this attribute is marked as localizable
-                                    if (attr.localizable && productSetsLocale !== 'default') {
+                                    const productSetsCustomLocale = attr.localizable && productSetsLocale !== 'default' ? productSetsLocale : null;
+                                    if (productSetsCustomLocale) {
                                         attributeString += ` xml:lang="${productSetsLocale}"`;
                                     }
                                     
@@ -4253,7 +4318,8 @@
                                         attributeString += ` site-id="${productSetsSiteId}"`;
                                     }
                                     
-                                    itemsXml += `\n            <custom-attribute${attributeString}>${escapeXml(formattedValue)}</custom-attribute>`;
+                                    const productSetsCustomValue = formatXmlValueForLocale(formattedValue, productSetsCustomLocale);
+                                    itemsXml += `\n            <custom-attribute${attributeString}>${productSetsCustomValue}</custom-attribute>`;
                                 }
                             });
                             itemsXml += `\n        </custom-attributes>`;
@@ -4362,14 +4428,16 @@
                                     
                                     // Page attributes are always localizable
                                     let elementAttributes = '';
-                                    if (selectedLocale !== 'default') {
+                                    const pageLocale = selectedLocale !== 'default' ? selectedLocale : null;
+                                    if (pageLocale) {
                                         elementAttributes += ` xml:lang="${selectedLocale}"`;
                                     }
                                     if (useSiteSpecific && siteId) {
                                         elementAttributes += ` site-id="${siteId}"`;
                                     }
                                     
-                                    itemContent += `\n            <${pageElement.elementName}${elementAttributes}>${escapeXml(formattedValue)}</${pageElement.elementName}>`;
+                                    const pageAttrValue = formatXmlValueForLocale(formattedValue, pageLocale);
+                                    itemContent += `\n            <${pageElement.elementName}${elementAttributes}>${pageAttrValue}</${pageElement.elementName}>`;
                                 });
                                 
                                 itemContent += '\n        </page-attributes>';
@@ -4381,18 +4449,21 @@
                         const attributeType = getAttributeType(element.key);
                         const formattedValue = validateAndFormatValue(element.value, attributeType);
                         
-                        // Check if this attribute is localizable or site-specific using user-selected flags
+                        // Check if this attribute is localizable or site-specific
+                        // Include BOTH checkbox-selected AND predefined localizable attributes
                         const attrFlags = attributeFlags[element.key] || {};
-                        const isLocalizable = attrFlags.localizable || 
-                            currentLocalizableAttrs.some(attr => 
-                                attr.toLowerCase() === element.key.toLowerCase() || 
-                                convertToXmlElementName(attr) === element.elementName
-                            );
+                        const isLocalizableByCheckbox = attrFlags.localizable || false;
+                        const isLocalizableByPredefined = currentLocalizableAttrs.some(attr => 
+                            attr.toLowerCase() === element.key.toLowerCase() || 
+                            convertToXmlElementName(attr) === element.elementName
+                        );
+                        const isLocalizable = isLocalizableByCheckbox || isLocalizableByPredefined;
                         const isSiteSpecific = attrFlags.siteSpecific || false;
                         
                         let elementAttributes = '';
-                        // Use global locale input for localizable attributes
-                        if (isLocalizable && selectedLocale !== 'default') {
+                        // Use global locale input for ANY localizable attribute when locale is not default
+                        const standardLocale = isLocalizable && selectedLocale !== 'default' ? selectedLocale : null;
+                        if (standardLocale) {
                             elementAttributes += ` xml:lang="${selectedLocale}"`;
                         }
                         // Use global site ID input for site-specific attributes
@@ -4400,7 +4471,8 @@
                             elementAttributes += ` site-id="${siteId}"`;
                         }
                         
-                        itemContent += `\n        <${element.elementName}${elementAttributes}>${escapeXml(formattedValue)}</${element.elementName}>`;
+                        const standardAttrValue = formatXmlValueForLocale(formattedValue, standardLocale);
+                        itemContent += `\n        <${element.elementName}${elementAttributes}>${standardAttrValue}</${element.elementName}>`;
                     });
                     
                     // If we have page attributes but haven't inserted them yet (no standard elements after page-attributes position)
@@ -4419,14 +4491,16 @@
                             const formattedValue = validateAndFormatValue(pageElement.value, attributeType);
                             
                             let elementAttributes = '';
-                            if (selectedLocale !== 'default') {
+                            const pageLocale2 = selectedLocale !== 'default' ? selectedLocale : null;
+                            if (pageLocale2) {
                                 elementAttributes += ` xml:lang="${selectedLocale}"`;
                             }
                             if (useSiteSpecific && siteId) {
                                 elementAttributes += ` site-id="${siteId}"`;
                             }
                             
-                            itemContent += `\n            <${pageElement.elementName}${elementAttributes}>${escapeXml(formattedValue)}</${pageElement.elementName}>`;
+                            const pageAttrValue2 = formatXmlValueForLocale(formattedValue, pageLocale2);
+                            itemContent += `\n            <${pageElement.elementName}${elementAttributes}>${pageAttrValue2}</${pageElement.elementName}>`;
                         });
                         
                         itemContent += '\n        </page-attributes>';
@@ -4446,14 +4520,16 @@
                             const isSiteSpecific = attrFlags.siteSpecific || false;
                             
                             let elementAttributes = ` attribute-id="${element.key}"`;
-                            if (isLocalizable && selectedLocale !== 'default') {
+                            const customLocale = isLocalizable && selectedLocale !== 'default' ? selectedLocale : null;
+                            if (customLocale) {
                                 elementAttributes += ` xml:lang="${selectedLocale}"`;
                             }
                             if (useSiteSpecific && siteId && isSiteSpecific) {
                                 elementAttributes += ` site-id="${siteId}"`;
                             }
                             
-                            itemContent += `\n            <custom-attribute${elementAttributes}>${escapeXml(formattedValue)}</custom-attribute>`;
+                            const customAttrValue = formatXmlValueForLocale(formattedValue, customLocale);
+                            itemContent += `\n            <custom-attribute${elementAttributes}>${customAttrValue}</custom-attribute>`;
                         });
                         itemContent += '\n        </custom-attributes>';
                     }
@@ -4576,18 +4652,23 @@
                             itemsXml += '\n        <variations>';
                             itemsXml += '\n            <attributes>';
                             
+                            // Use selected locale for variation attributes (defaults to 'x-default' if not specified)
+                            const variationLocale = selectedLocale !== 'default' ? selectedLocale : 'x-default';
+                            
                             for (const attrId in variationAttributesMap) {
                                 const attrData = variationAttributesMap[attrId];
+                                const variationDisplayNameValue = formatXmlValueForLocale(attrData.displayName, variationLocale !== 'x-default' ? variationLocale : null);
                                 itemsXml += `\n                <variation-attribute attribute-id="${escapeXml(attrId)}" variation-attribute-id="${escapeXml(attrId)}">`;
-                                itemsXml += `\n                    <display-name xml:lang="x-default">${escapeXml(attrData.displayName)}</display-name>`;
+                                itemsXml += `\n                    <display-name xml:lang="${variationLocale}">${variationDisplayNameValue}</display-name>`;
                                 
                                 // Add variation-attribute-values section
                                 if (attrData.values.size > 0) {
                                     itemsXml += '\n                    <variation-attribute-values>';
                                     
                                     for (const [value, displayValue] of attrData.values) {
+                                        const variationDisplayValue = formatXmlValueForLocale(displayValue, variationLocale !== 'x-default' ? variationLocale : null);
                                         itemsXml += `\n                        <variation-attribute-value value="${escapeXml(value)}">`;
-                                        itemsXml += `\n                            <display-value xml:lang="x-default">${escapeXml(displayValue)}</display-value>`;
+                                        itemsXml += `\n                            <display-value xml:lang="${variationLocale}">${variationDisplayValue}</display-value>`;
                                         itemsXml += '\n                        </variation-attribute-value>';
                                     }
                                     
@@ -4738,9 +4819,9 @@
                 }
                 
                 const localeString = currentObjectType === 'ContentAsset' 
-                    ? contentLocaleSelect.value.trim() 
+                    ? normalizeLocale(contentLocaleSelect.value.trim() || 'x-default')
                     : currentObjectType === 'LibraryFolder'
-                    ? folderLocaleSelect.value.trim()
+                    ? normalizeLocale(folderLocaleSelect.value.trim() || 'x-default')
                     : (selectedLocale !== 'default' ? selectedLocale : 'default');
                 downloadFile(finalXml, 'application/xml', `b2c_${currentObjectType.toLowerCase()}_import_${localeString}.xml`);
             };
@@ -5276,12 +5357,11 @@
             
             // Reset Flags Button
             resetFlagsBtn.addEventListener('click', () => {
-                // Reset all attribute flags to SFCC defaults based on current object type
-                const localizableAttrs = getLocalizableAttributes();
+                // Reset all attribute flags to unchecked (user must intentionally check these)
                 selectedAttributes.forEach(attr => {
                     attributeFlags[attr] = {
-                        localizable: localizableAttrs.includes(attr),
-                        siteSpecific: siteSpecificAttributes.includes(attr) // Only Products have site-specific standard attributes
+                        localizable: false,
+                        siteSpecific: false
                     };
                 });
                 renderSelectedAttributes();
