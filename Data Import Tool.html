@@ -3019,16 +3019,34 @@
                         
                         // Try to detect if it's UTF-8 or Windows-1252
                         let csvText;
-                        if (isLikelyUTF8(bytes)) {
-                            // Decode as UTF-8
-                            const decoder = new TextDecoder('utf-8');
+                        let encodingUsed = 'unknown';
+                        
+                        // Always try UTF-8 first if BOM is present
+                        if (bytes.length >= 3 && bytes[0] === 0xEF && bytes[1] === 0xBB && bytes[2] === 0xBF) {
+                            // UTF-8 BOM detected - decode as UTF-8
+                            const decoder = new TextDecoder('utf-8', { fatal: false });
                             csvText = decoder.decode(bytes);
+                            encodingUsed = 'UTF-8 (BOM detected)';
                         } else {
-                            // Decode as Windows-1252
-                            csvText = decodeWindows1252(bytes);
+                            // Try UTF-8 first (preferred for modern files)
+                            const utf8Decoder = new TextDecoder('utf-8', { fatal: false });
+                            const utf8Text = utf8Decoder.decode(bytes);
+                            
+                            // Check if UTF-8 decoding produced replacement characters
+                            const hasReplacementChars = utf8Text.includes('\uFFFD');
+                            
+                            if (!hasReplacementChars || isLikelyUTF8(bytes)) {
+                                // Use UTF-8 if no replacement characters or likely UTF-8
+                                csvText = utf8Text;
+                                encodingUsed = 'UTF-8';
+                            } else {
+                                // Fall back to Windows-1252 if UTF-8 produced replacement characters
+                                csvText = decodeWindows1252(bytes);
+                                encodingUsed = 'Windows-1252';
+                            }
                         }
                         
-                        parseCSVText(csvText);
+                        parseCSVText(csvText, encodingUsed);
                     } catch (error) {
                         conversionStatus.textContent = `File Read Error: ${error.message}`;
                         conversionStatus.classList.add('text-red-500');
@@ -3047,19 +3065,84 @@
             
             // Simple heuristic to detect if bytes are likely UTF-8
             const isLikelyUTF8 = (bytes) => {
-                // Check for UTF-8 BOM
+                // Check for UTF-8 BOM - if present, definitely UTF-8
                 if (bytes.length >= 3 && bytes[0] === 0xEF && bytes[1] === 0xBB && bytes[2] === 0xBF) {
                     return true;
                 }
                 
-                // Look for problematic Windows-1252 bytes in the 0x80-0x9F range
-                // These are control characters in UTF-8 but printable in Windows-1252
-                for (let i = 0; i < Math.min(bytes.length, 1000); i++) {
+                // Try to validate UTF-8 encoding by checking for valid UTF-8 sequences
+                // Valid UTF-8 sequences: 0xxxxxxx, 110xxxxx 10xxxxxx, 1110xxxx 10xxxxxx 10xxxxxx, etc.
+                let i = 0;
+                let validUTF8Sequences = 0;
+                let invalidUTF8Sequences = 0;
+                
+                while (i < Math.min(bytes.length, 5000)) {
                     const byte = bytes[i];
-                    // If we find bytes in the Windows-1252 special range, likely Windows-1252
-                    if ((byte >= 0x80 && byte <= 0x9F) && byte !== 0x81 && byte !== 0x8D && byte !== 0x8F && byte !== 0x90 && byte !== 0x9D) {
-                        return false; // Likely Windows-1252
+                    
+                    if (byte < 0x80) {
+                        // ASCII character, valid UTF-8
+                        validUTF8Sequences++;
+                        i++;
+                    } else if ((byte & 0xE0) === 0xC0) {
+                        // 2-byte UTF-8 sequence: 110xxxxx 10xxxxxx
+                        if (i + 1 < bytes.length && (bytes[i + 1] & 0xC0) === 0x80) {
+                            validUTF8Sequences++;
+                            i += 2;
+                        } else {
+                            invalidUTF8Sequences++;
+                            i++;
+                        }
+                    } else if ((byte & 0xF0) === 0xE0) {
+                        // 3-byte UTF-8 sequence: 1110xxxx 10xxxxxx 10xxxxxx
+                        if (i + 2 < bytes.length && 
+                            (bytes[i + 1] & 0xC0) === 0x80 && 
+                            (bytes[i + 2] & 0xC0) === 0x80) {
+                            validUTF8Sequences++;
+                            i += 3;
+                        } else {
+                            invalidUTF8Sequences++;
+                            i++;
+                        }
+                    } else if ((byte & 0xF8) === 0xF0) {
+                        // 4-byte UTF-8 sequence: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+                        if (i + 3 < bytes.length && 
+                            (bytes[i + 1] & 0xC0) === 0x80 && 
+                            (bytes[i + 2] & 0xC0) === 0x80 &&
+                            (bytes[i + 3] & 0xC0) === 0x80) {
+                            validUTF8Sequences++;
+                            i += 4;
+                        } else {
+                            invalidUTF8Sequences++;
+                            i++;
+                        }
+                    } else if ((byte & 0xC0) === 0x80) {
+                        // Continuation byte without a start byte - invalid UTF-8
+                        invalidUTF8Sequences++;
+                        i++;
+                    } else {
+                        // Invalid UTF-8 byte
+                        invalidUTF8Sequences++;
+                        i++;
                     }
+                }
+                
+                // If we found valid UTF-8 sequences and few invalid ones, likely UTF-8
+                // Also check for Windows-1252 specific bytes (0x80-0x9F range excluding undefined ones)
+                let windows1252Bytes = 0;
+                for (let j = 0; j < Math.min(bytes.length, 1000); j++) {
+                    const byte = bytes[j];
+                    if ((byte >= 0x80 && byte <= 0x9F) && byte !== 0x81 && byte !== 0x8D && byte !== 0x8F && byte !== 0x90 && byte !== 0x9D) {
+                        windows1252Bytes++;
+                    }
+                }
+                
+                // Prefer UTF-8 if we have valid sequences and few invalid ones
+                // Or if we have few Windows-1252 specific bytes
+                if (validUTF8Sequences > 0 && invalidUTF8Sequences < validUTF8Sequences / 10) {
+                    return true;
+                }
+                if (windows1252Bytes > 10) {
+                    return false; // Likely Windows-1252
                 }
                 
                 return true; // Default to UTF-8
@@ -3119,7 +3202,13 @@
             };
             
             // Parse the CSV text with Papa Parse
-            const parseCSVText = (csvText) => {
+            const parseCSVText = (csvText, encodingUsed = 'unknown') => {
+                // Check for replacement characters (U+FFFD) which indicate encoding issues
+                const hasReplacementChars = csvText.includes('\uFFFD');
+                if (hasReplacementChars) {
+                    console.warn('Warning: CSV file contains replacement characters (�). This usually indicates an encoding issue. Please ensure your CSV file is saved as UTF-8 encoding.');
+                }
+                
                 Papa.parse(csvText, {
                     header: true,
                     skipEmptyLines: true,
@@ -3133,7 +3222,15 @@
                             );
                         }
                         
-                        conversionStatus.textContent = `Successfully parsed ${parsedCsvData.length} rows.`;
+                        let statusMessage = `Successfully parsed ${parsedCsvData.length} rows (${encodingUsed}).`;
+                        if (hasReplacementChars) {
+                            statusMessage += ' ⚠️ File contains encoding issues. Please save CSV as UTF-8 for best results with special characters.';
+                            conversionStatus.classList.add('text-amber-600');
+                        } else {
+                            conversionStatus.classList.remove('text-amber-600');
+                            conversionStatus.classList.remove('text-red-500');
+                        }
+                        conversionStatus.textContent = statusMessage;
                         generateXmlBtn.disabled = false;
                     },
                     error: (err) => {
@@ -3351,12 +3448,25 @@
 
             // Normalize locale format: convert underscores to hyphens (e.g., "fr_FR" -> "fr-FR")
             // Business Manager UI uses underscores, but XML requires hyphens
+            // Also capitalize country code for 5-character locales (e.g., "es-mx" -> "es-MX")
             const normalizeLocale = (locale) => {
                 if (!locale || locale === 'default' || locale === 'x-default') {
                     return locale;
                 }
                 // Convert underscore to hyphen for XML compatibility
-                return locale.replace(/_/g, '-');
+                let normalized = locale.replace(/_/g, '-');
+                
+                // If locale is exactly 5 characters (format: "xx-XX"), capitalize the last 2 characters (country code)
+                // Examples: "es-mx" -> "es-MX", "fr-fr" -> "fr-FR"
+                // 2-character locales like "es" are left unchanged
+                if (normalized.length === 5 && normalized.includes('-')) {
+                    const parts = normalized.split('-');
+                    if (parts.length === 2 && parts[0].length === 2 && parts[1].length === 2) {
+                        normalized = parts[0] + '-' + parts[1].toUpperCase();
+                    }
+                }
+                
+                return normalized;
             };
 
             // Format XML value for locale-specific attributes - uses CDATA to preserve special characters
@@ -3566,8 +3676,8 @@
 
                     // Handle CategoryAssignment separately due to its unique XML structure
                     if (currentObjectType === 'CategoryAssignment') {
-                        const productId = row['Product ID'];
-                        const categoryId = row['Category ID'];
+                        const productId = row['Product ID'] ? row['Product ID'].trim() : '';
+                        const categoryId = row['Category ID'] ? row['Category ID'].trim() : '';
                         const isPrimaryCategory = row['Primary Category ID'] && row['Primary Category ID'].toString().toLowerCase() === 'true';
                         
                         if (!productId || !categoryId) return; // Both Product ID and Category ID are required
@@ -3587,8 +3697,8 @@
                     // Handle ProductRecommendation separately due to its unique XML structure
                     if (currentObjectType === 'ProductRecommendation') {
                         const recommendationType = row['Recommendation Type'];
-                        const targetId = row['Target ID'];
-                        const sourceId = row['Source ID'];
+                        const targetId = row['Target ID'] ? row['Target ID'].trim() : '';
+                        const sourceId = row['Source ID'] ? row['Source ID'].trim() : '';
                         if (!recommendationType || !targetId || !sourceId) return; // Skip rows without required data
                         
                         itemsXml += `\n    <${currentTag.main} type="${escapeXml(recommendationType)}" target-id="${escapeXml(targetId)}" source-type="product" source-id="${escapeXml(sourceId)}"></${currentTag.main}>`;
@@ -3597,8 +3707,8 @@
 
                     // Handle CategoryPosition separately due to its unique XML structure
                     if (currentObjectType === 'CategoryPosition') {
-                        const categoryId = row['Category ID'];
-                        const productId = row['Product ID'];
+                        const categoryId = row['Category ID'] ? row['Category ID'].trim() : '';
+                        const productId = row['Product ID'] ? row['Product ID'].trim() : '';
                         const sortingType = sortingTypeSelect.value;
                         if (!categoryId || !productId || !sortingType) return; // Skip rows without required data
                         
@@ -3609,11 +3719,11 @@
                     // Handle CategoryAssignmentRules separately - process rules from CSV
                     if (currentObjectType === 'CategoryAssignmentRules') {
                         // Each row defines a rule with up to 10 conditions
-                        const categoryId = row['Category ID'];
+                        const categoryId = row['Category ID'] ? row['Category ID'].trim() : '';
                         if (!categoryId) return; // Category ID is required
                         
                         // Read configuration columns with defaults
-                        let locale = row['Locale'] || 'default';
+                        let locale = normalizeLocale(row['Locale'] || 'default');
                         let siteContext = row['Site Context'] || 'default';
                         
                         // Parse boolean values robustly
@@ -3664,7 +3774,7 @@
 
                     // Handle SearchRefinementDefinitions separately - hierarchical structure with dynamic locales
                     if (currentObjectType === 'SearchRefinementDefinitions') {
-                        const refinementId = row['Refinement ID'];
+                        const refinementId = row['Refinement ID'] ? row['Refinement ID'].trim() : '';
                         const rowType = row['Row Type'];
                         
                         if (!refinementId || !rowType) return; // Skip incomplete rows
@@ -3690,7 +3800,7 @@
                                 // Extract locale from "Display Name (locale)" format
                                 const match = columnName.match(/Display Name \((.+)\)/);
                                 if (match) {
-                                    const locale = match[1];
+                                    const locale = normalizeLocale(match[1]); // Normalize locale (underscore to hyphen, capitalize country code)
                                     const value = row[columnName] || '';
                                     if (value) {
                                         displayNames[locale] = value;
@@ -3731,7 +3841,7 @@
 
                     // Handle ImageMapping separately due to its unique XML structure
                     if (currentObjectType === 'ImageMapping') {
-                        const productId = row['Product ID'];
+                        const productId = row['Product ID'] ? row['Product ID'].trim() : '';
                         if (!productId) return; // Skip rows without product ID
                         
                         const selectedType = document.querySelector('input[name="imageMappingType"]:checked')?.value;
@@ -3798,8 +3908,8 @@
 
                     // Handle VariationGroup separately due to its unique XML structure
                     if (currentObjectType === 'VariationGroup') {
-                        const masterProductId = row['Master Product ID'];
-                        const variationGroupId = row['Variation Group ID'];
+                        const masterProductId = row['Master Product ID'] ? row['Master Product ID'].trim() : '';
+                        const variationGroupId = row['Variation Group ID'] ? row['Variation Group ID'].trim() : '';
                         const groupingAttribute = row['Grouping Variation Attribute'];
                         const groupingValue = row['Grouping Variation Attribute Value'];
                         const onlineFlag = row['Online Flag'];
@@ -3861,7 +3971,7 @@
 
                     // Handle Prices separately due to its unique XML structure (pricebooks)
                     if (currentObjectType === 'Prices') {
-                        const productId = row['Product ID'];
+                        const productId = row['Product ID'] ? row['Product ID'].trim() : '';
                         const price = row['Price'];
                         const onlineFrom = row['Online From'];
                         const onlineTo = row['Online To'];
@@ -3970,7 +4080,7 @@
 
                     // Handle Inventory separately due to its unique XML structure (inventory)
                     if (currentObjectType === 'Inventory') {
-                        const productId = row['Product ID'];
+                        const productId = row['Product ID'] ? row['Product ID'].trim() : '';
                         const allocation = row['Allocation'];
                         const perpetual = row['Perpetual'];
                         const preorderBackorder = row['Pre-order / Backorder'];
@@ -4087,7 +4197,7 @@
 
                     // Handle ContentAsset separately due to its unique XML structure
                     if (currentObjectType === 'ContentAsset') {
-                        const contentId = row['ContentAssetID'];
+                        const contentId = row['ContentAssetID'] ? row['ContentAssetID'].trim() : '';
                         if (!contentId) return; // Skip rows without content ID
                         
                         // Get the content locale (defaults to 'x-default' if not specified)
@@ -4185,7 +4295,7 @@
 
                     // Handle LibraryFolder separately due to its unique XML structure
                     if (currentObjectType === 'LibraryFolder') {
-                        const folderId = row['ID'];
+                        const folderId = row['ID'] ? row['ID'].trim() : '';
                         if (!folderId) return; // Skip rows without folder ID
                         
                         // Get the folder locale (defaults to 'x-default' if not specified)
@@ -4222,7 +4332,7 @@
 
                     // Handle StaticCustomerGroup separately due to its unique XML structure
                     if (currentObjectType === 'StaticCustomerGroup') {
-                        const customerNo = row['Customer Number'];
+                        const customerNo = row['Customer Number'] ? row['Customer Number'].trim() : '';
                         if (!customerNo) return; // Skip rows without customer number
                         
                         const groupId = staticGroupIdInput.value.trim();
@@ -4232,7 +4342,7 @@
 
                     // Handle ProductSets separately due to its unique structure
                     if (currentObjectType === 'ProductSets') {
-                        const productSetId = row['Product Set ID'];
+                        const productSetId = row['Product Set ID'] ? row['Product Set ID'].trim() : '';
                         
                         if (!productSetId) return; // Skip incomplete rows
                         
@@ -4330,9 +4440,9 @@
                         
                         // Process product IDs from after custom attributes (up to 100)
                         for (let i = 1; i <= 100; i++) {
-                            const productId = row[`Product ID ${i}`];
-                            if (productId && productId.trim()) {
-                                itemsXml += `\n            <product-set-product product-id="${escapeXml(productId.trim())}"/>`;
+                            const productId = row[`Product ID ${i}`] ? row[`Product ID ${i}`].trim() : '';
+                            if (productId) {
+                                itemsXml += `\n            <product-set-product product-id="${escapeXml(productId)}"/>`;
                             }
                         }
                         
@@ -4342,7 +4452,7 @@
                     }
 
                     // Handle standard Product and Category objects
-                    const itemId = row[idField];
+                    const itemId = row[idField] ? row[idField].trim() : '';
                     if (!itemId) return; // Skip rows without an ID
 
                     // Define page attribute names
@@ -4544,8 +4654,8 @@
                     const variationAttributesMap = {}; // Map of attrId -> { displayName, values: Set }
                     
                     parsedCsvData.forEach(row => {
-                        const variantId = row['Variation Product ID'];
-                        const baseProductId = row['Base Product ID'];
+                        const variantId = row['Variation Product ID'] ? row['Variation Product ID'].trim() : '';
+                        const baseProductId = row['Base Product ID'] ? row['Base Product ID'].trim() : '';
                         const onlineFlag = row['onlineFlag'];
                         const searchableFlag = row['searchableFlag'];
                         
