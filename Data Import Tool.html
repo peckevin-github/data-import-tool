@@ -635,64 +635,6 @@
                 </div>
             </div>
 
-            <!-- Content Asset Configuration Section -->
-            <div id="content-asset-section" class="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200 hidden">
-                <h4 class="font-semibold text-slate-800 mb-4">Content Asset Configuration</h4>
-                
-                <!-- Library ID Input -->
-                <div class="mb-4 p-4 bg-white rounded-lg border border-slate-300">
-                    <label for="content-library-id" class="block text-sm font-medium text-slate-700 mb-2">Library ID <span class="text-red-500">*</span></label>
-                    <input type="text" id="content-library-id" placeholder="e.g., 'SharedLibrary'" class="w-full px-4 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow">
-                    <p class="text-xs text-slate-500 mt-1">Required for XML generation</p>
-                </div>
-                
-                <!-- Content Locale Selection -->
-                <div class="mb-4 p-4 bg-white rounded-lg border border-slate-300">
-                    <label for="content-locale-select" class="block text-sm font-medium text-slate-700 mb-2">Locale <span class="text-red-500">*</span></label>
-                    <select id="content-locale-select" class="w-full px-4 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow">
-                        <option value="default" selected>Default</option>
-                        <option value="ar">Arabic</option>
-                        <option value="bg">Bulgarian</option>
-                        <option value="zh">Chinese</option>
-                        <option value="zh_CN">Chinese (China)</option>
-                        <option value="zh_TW">Chinese (Taiwan)</option>
-                        <option value="hr">Croatian</option>
-                        <option value="cs">Czech</option>
-                        <option value="da">Danish</option>
-                        <option value="nl">Dutch</option>
-                        <option value="en">English</option>
-                        <option value="en_CA">English (Canada)</option>
-                        <option value="en_GB">English (United Kingdom)</option>
-                        <option value="en_US">English (United States)</option>
-                        <option value="fi">Finnish</option>
-                        <option value="fr">French</option>
-                        <option value="fr_CA">French (Canada)</option>
-                        <option value="de">German</option>
-                        <option value="el">Greek</option>
-                        <option value="iw">Hebrew</option>
-                        <option value="hu">Hungarian</option>
-                        <option value="in">Indonesian</option>
-                        <option value="it">Italian</option>
-                        <option value="ja">Japanese</option>
-                        <option value="ko">Korean</option>
-                        <option value="no">Norwegian</option>
-                        <option value="pl">Polish</option>
-                        <option value="pt">Portuguese</option>
-                        <option value="pt_BR">Portuguese (Brazil)</option>
-                        <option value="pt_PT">Portuguese (Portugal)</option>
-                        <option value="ro">Romanian</option>
-                        <option value="ru">Russian</option>
-                        <option value="sk">Slovak</option>
-                        <option value="sl">Slovenian</option>
-                        <option value="es">Spanish</option>
-                        <option value="es_MX">Spanish (Mexico)</option>
-                        <option value="es_ES">Spanish (Spain)</option>
-                        <option value="sv">Swedish</option>
-                        <option value="th">Thai</option>
-                    </select>
-                    <p class="text-xs text-slate-500 mt-1">Required for XML generation</p>
-                </div>
-            </div>
             
             <!-- Library Folder Configuration Section -->
             <div id="library-folder-section" class="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200 hidden">
@@ -1626,6 +1568,13 @@
                 <p class="text-xs text-slate-500 mt-1">Required for XML generation</p>
             </div>
             
+            <!-- Library ID Input (for Content Asset imports) -->
+            <div id="step3-content-library-id-section" class="mb-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200 hidden">
+                <label for="step3-content-library-id-input" class="block text-sm font-medium text-slate-700 mb-2">Library ID <span class="text-red-500">*</span></label>
+                <input type="text" id="step3-content-library-id-input" placeholder="e.g., 'SharedLibrary'" class="w-full px-4 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow">
+                <p class="text-xs text-slate-500 mt-1">Required for XML generation</p>
+            </div>
+            
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
                     <label class="block text-sm font-medium text-slate-700 mb-2">Upload CSV File</label>
@@ -1708,6 +1657,8 @@
             const step3InventoryListIdInput = document.getElementById('step3-inventory-list-id');
             const step3CouponCodeSection = document.getElementById('step3-coupon-code-section');
             const step3CouponCodeGroupIdInput = document.getElementById('step3-coupon-code-group-id');
+            const step3ContentLibraryIdSection = document.getElementById('step3-content-library-id-section');
+            const step3ContentLibraryIdInput = document.getElementById('step3-content-library-id-input');
             const recommendationCatalogIdInput = document.getElementById('recommendation-catalog-id');
             const variationMappingCatalogIdInput = document.getElementById('variation-mapping-catalog-id');
             const categoryAssignmentCatalogIdInput = document.getElementById('category-assignment-catalog-id');
@@ -1729,9 +1680,6 @@
             const inventoryListIdInput = document.getElementById('inventory-list-id');
             const couponCodeSection = document.getElementById('coupon-code-section');
             const generateCouponCodeCsvBtn = document.getElementById('generate-coupon-code-csv-btn');
-            const contentAssetSection = document.getElementById('content-asset-section');
-            const contentLibraryIdInput = document.getElementById('content-library-id');
-            const contentLocaleSelect = document.getElementById('content-locale-select');
             const libraryFolderSection = document.getElementById('library-folder-section');
             const folderLibraryIdInput = document.getElementById('folder-library-id');
             const folderLocaleSelect = document.getElementById('folder-locale-select');
@@ -3559,6 +3507,20 @@
                     }
                 }
                 
+                // Special handling for Content Asset - validate Library ID
+                if (currentObjectType === 'ContentAsset') {
+                    const libraryId = step3ContentLibraryIdInput.value.trim();
+                    
+                    if (!libraryId) {
+                        conversionStatus.textContent = 'Error: Please enter a Library ID above.';
+                        conversionStatus.classList.add('text-red-500');
+                        step3ContentLibraryIdSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        step3ContentLibraryIdInput.classList.add('border-red-500');
+                        setTimeout(() => step3ContentLibraryIdInput.classList.remove('border-red-500'), 3000);
+                        return;
+                    }
+                }
+                
                 // Get catalog ID from Step 3 input or use special values for non-catalog types
                 const catalogId = catalogRequiredTypes.includes(currentObjectType)
                     ? step3CatalogIdInput.value.trim()
@@ -3567,7 +3529,7 @@
                     : (currentObjectType === 'StaticCustomerGroup')
                     ? staticGroupIdInput.value.trim()
                     : (currentObjectType === 'ContentAsset')
-                    ? contentLibraryIdInput.value.trim()
+                    ? step3ContentLibraryIdInput.value.trim()
                     : (currentObjectType === 'LibraryFolder')
                     ? folderLibraryIdInput.value.trim()
                     : (currentObjectType === 'Prices')
@@ -4200,8 +4162,8 @@
                         const contentId = row['ContentAssetID'] ? row['ContentAssetID'].trim() : '';
                         if (!contentId) return; // Skip rows without content ID
                         
-                        // Get the content locale (defaults to 'x-default' if not specified)
-                        const contentLocale = normalizeLocale(contentLocaleSelect ? contentLocaleSelect.value.trim() || 'x-default' : 'x-default');
+                        // Get the content locale from global locale input (defaults to 'x-default' if not specified)
+                        const contentLocale = normalizeLocale(selectedLocale !== 'default' ? selectedLocale : 'x-default');
                         
                         itemsXml += `\n    <content content-id="${escapeXml(contentId)}">`;
                         
@@ -4912,7 +4874,8 @@
                     finalXml = `<?xml version="1.0" encoding="UTF-8"?>\n<inventory xmlns="http://www.demandware.com/xml/impex/inventory/2007-05-31">\n    <inventory-list>\n        <header list-id="${inventoryListId}">\n            <default-instock>false</default-instock>\n        </header>\n        <records>${itemsXml}\n        </records>\n    </inventory-list>\n</inventory>`;
                 } else if (currentObjectType === 'ContentAsset') {
                     // Use library structure for Content Assets
-                    finalXml = `<?xml version="1.0" encoding="UTF-8"?>\n<library xmlns="http://www.demandware.com/xml/impex/library/2006-10-31">${itemsXml}\n</library>`;
+                    const libraryId = step3ContentLibraryIdInput.value.trim();
+                    finalXml = `<?xml version="1.0" encoding="UTF-8"?>\n<library xmlns="http://www.demandware.com/xml/impex/library/2006-10-31" library-id="${libraryId}">${itemsXml}\n</library>`;
                 } else if (currentObjectType === 'LibraryFolder') {
                     // Use library structure for Library Folders
                     const libraryId = folderLibraryIdInput.value.trim();
@@ -4929,7 +4892,7 @@
                 }
                 
                 const localeString = currentObjectType === 'ContentAsset' 
-                    ? normalizeLocale(contentLocaleSelect.value.trim() || 'x-default')
+                    ? (selectedLocale !== 'default' ? selectedLocale : 'x-default')
                     : currentObjectType === 'LibraryFolder'
                     ? normalizeLocale(folderLocaleSelect.value.trim() || 'x-default')
                     : (selectedLocale !== 'default' ? selectedLocale : 'default');
@@ -4966,11 +4929,6 @@
                     attributeFlags = {}; // Reset custom attribute flags
                 parsedCsvData = null;
                     
-                    // Auto-select folder for ContentAsset
-                    if (currentObjectType === 'ContentAsset') {
-                        selectedAttributes.add('folder');
-                    }
-
                 attributeSection.classList.remove('hidden');
                 conversionSection.classList.remove('hidden');
                 
@@ -5004,6 +4962,13 @@
                     step3CouponCodeSection.classList.remove('hidden');
                 } else {
                     step3CouponCodeSection.classList.add('hidden');
+                }
+                
+                // Show/hide Content Asset Library ID fields
+                if (currentObjectType === 'ContentAsset') {
+                    step3ContentLibraryIdSection.classList.remove('hidden');
+                } else {
+                    step3ContentLibraryIdSection.classList.add('hidden');
                 }
                 
                 // Handle different UI states based on object type
@@ -5254,14 +5219,13 @@
                 } else if (currentObjectType === 'ContentAsset') {
                     // Show content asset section for Content Assets
                     contentAssetHelp.classList.remove('hidden'); // Show help section
-                    localeSection.classList.add('hidden');
+                    localeSection.classList.remove('hidden'); // Show locale section (uses global locale input)
                     localeSectionMoved.classList.add('hidden');
                     siteSection.classList.add('hidden');
                     siteSectionMoved.classList.add('hidden');
                     productAttributesDescription.classList.add('hidden');
                     attributesSection.classList.remove('hidden');
                     customAttributesSection.classList.remove('hidden');
-                    contentAssetSection.classList.remove('hidden');
                     libraryFolderSection.classList.add('hidden');
                     staticCustomerGroupSection.classList.add('hidden');
                     variationMappingSection.classList.add('hidden');
