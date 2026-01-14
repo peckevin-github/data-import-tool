@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Salesforce+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
@@ -158,9 +159,10 @@
                 <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
                     <h3 class="text-xs font-medium text-slate-600 mb-2 uppercase tracking-wide">SEO</h3>
                     <div class="space-y-1" id="seo-options">
-                        <div class="p-1.5 text-sm text-slate-500 italic">
-                            Coming Soon
-                        </div>
+                        <label class="flex items-center space-x-2 cursor-pointer p-1.5 rounded hover:bg-white transition-colors">
+                            <input type="radio" name="objectType" value="UrlRules" class="h-3 w-3 text-indigo-600 focus:ring-indigo-500 border-gray-300">
+                            <span class="text-sm font-medium text-slate-700">URL Character Replacements</span>
+                        </label>
                     </div>
                 </div>
             </div>
@@ -1524,6 +1526,31 @@
                 </div>
             </div>
 
+            <!-- URL Rules Section -->
+            <div id="url-rules-section" class="hidden">
+                <div class="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                    <h3 class="text-xl font-semibold mb-4 text-slate-900 text-center">URL Character Replacements CSV Template</h3>
+                    
+                    <div class="mb-6">
+                        <h4 class="font-semibold text-slate-800 mb-2">CSV Structure:</h4>
+                        <div class="grid grid-cols-1 gap-4 mb-4 max-w-md mx-auto">
+                            <div class="bg-white p-3 rounded-lg border border-slate-300">
+                                <span class="font-medium text-slate-700">Column A: Character</span>
+                                <span class="block text-xs text-slate-500">Required - The character to be replaced in URLs</span>
+                            </div>
+                            <div class="bg-white p-3 rounded-lg border border-slate-300">
+                                <span class="font-medium text-slate-700">Column B: Replacement</span>
+                                <span class="block text-xs text-slate-500">Required - The replacement character for URLs</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center">
+                        <button id="generate-url-rules-csv-btn" class="px-8 py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all transform hover:scale-105 shadow-lg">Generate CSV Template</button>
+                    </div>
+                </div>
+            </div>
+
         </main>
         
         <!-- Step 3: Convert CSV to XML -->
@@ -1573,6 +1600,28 @@
                 <label for="step3-content-library-id-input" class="block text-sm font-medium text-slate-700 mb-2">Library ID <span class="text-red-500">*</span></label>
                 <input type="text" id="step3-content-library-id-input" placeholder="e.g., 'SharedLibrary'" class="w-full px-4 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow">
                 <p class="text-xs text-slate-500 mt-1">Required for XML generation</p>
+            </div>
+            
+            <!-- URL Rules Configuration -->
+            <div id="step3-url-rules-section" class="mb-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200 hidden">
+                <h4 class="font-semibold text-slate-700 mb-3">URL Rules Configuration</h4>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label for="step3-url-rules-locale" class="block text-sm font-medium text-slate-700 mb-2">Locale <span class="text-red-500">*</span></label>
+                        <input type="text" id="step3-url-rules-locale" placeholder="e.g., 'x-default' or 'en-US'" value="default" class="w-full px-4 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow">
+                        <p class="text-xs text-slate-500 mt-1">Locale for character replacements (defaults to 'x-default' if left as 'default')</p>
+                    </div>
+                    <div>
+                        <label for="step3-url-rules-site-id" class="block text-sm font-medium text-slate-700 mb-2">Site ID <span class="text-red-500">*</span></label>
+                        <input type="text" id="step3-url-rules-site-id" placeholder="e.g., 'RefArch' or 'SiteGenesis'" class="w-full px-4 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow">
+                        <p class="text-xs text-slate-500 mt-1">Site ID used for the instance folder name in the ZIP structure</p>
+                    </div>
+                    <div>
+                        <label for="step3-url-rules-version" class="block text-sm font-medium text-slate-700 mb-2">SFCC Version <span class="text-red-500">*</span></label>
+                        <input type="text" id="step3-url-rules-version" placeholder="e.g., '26.1.1'" value="26.1.1" class="w-full px-4 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow">
+                        <p class="text-xs text-slate-500 mt-1">SFCC version (found in Business Manager or exported ZIP)</p>
+                    </div>
+                </div>
             </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -1632,6 +1681,7 @@
             const categoryAssignmentRulesSection = document.getElementById('category-assignment-rules-section');
             const searchRefinementDefinitionsSection = document.getElementById('search-refinement-definitions-section');
             const imageMappingSection = document.getElementById('image-mapping-section');
+            const contentAssetSection = null; // Content Asset section was moved to Step 3, no longer needed here
             const standardAttributesContainer = document.getElementById('standard-attributes');
             const customAttributesTableBody = document.getElementById('custom-attributes-table-body');
             const addRowBtn = document.getElementById('add-row-btn');
@@ -1659,6 +1709,10 @@
             const step3CouponCodeGroupIdInput = document.getElementById('step3-coupon-code-group-id');
             const step3ContentLibraryIdSection = document.getElementById('step3-content-library-id-section');
             const step3ContentLibraryIdInput = document.getElementById('step3-content-library-id-input');
+            const step3UrlRulesSection = document.getElementById('step3-url-rules-section');
+            const step3UrlRulesLocaleInput = document.getElementById('step3-url-rules-locale');
+            const step3UrlRulesSiteIdInput = document.getElementById('step3-url-rules-site-id');
+            const step3UrlRulesVersionInput = document.getElementById('step3-url-rules-version');
             const recommendationCatalogIdInput = document.getElementById('recommendation-catalog-id');
             const variationMappingCatalogIdInput = document.getElementById('variation-mapping-catalog-id');
             const categoryAssignmentCatalogIdInput = document.getElementById('category-assignment-catalog-id');
@@ -1680,6 +1734,8 @@
             const inventoryListIdInput = document.getElementById('inventory-list-id');
             const couponCodeSection = document.getElementById('coupon-code-section');
             const generateCouponCodeCsvBtn = document.getElementById('generate-coupon-code-csv-btn');
+            const urlRulesSection = document.getElementById('url-rules-section');
+            const generateUrlRulesCsvBtn = document.getElementById('generate-url-rules-csv-btn');
             const libraryFolderSection = document.getElementById('library-folder-section');
             const folderLibraryIdInput = document.getElementById('folder-library-id');
             const folderLocaleSelect = document.getElementById('folder-locale-select');
@@ -2433,6 +2489,12 @@
                     return;
                 }
                 
+                // Special handling for URL Rules - no attributes needed
+                if (currentObjectType === 'UrlRules') {
+                    generateUrlRulesCSV();
+                    return;
+                }
+                
                 if (selectedAttributes.size === 0 || !currentObjectType) return;
                 const selectedLocale = normalizeLocale(localeInputGlobal.value.trim() || 'default');
                 const headers = [`${currentObjectType}ID`, ...Array.from(selectedAttributes).sort()];
@@ -2591,6 +2653,12 @@
                 const headers = ['Customer Number'];
                 const csvContent = headers.join(',');
                 downloadFile(csvContent, 'text/csv', 'b2c_static_customer_group_template.csv');
+            };
+
+            const generateUrlRulesCSV = () => {
+                const headers = ['Character', 'Replacement'];
+                const csvContent = headers.join(',');
+                downloadFile(csvContent, 'text/csv', 'b2c_url_character_replacements.csv');
             };
 
             const generateProductSetsCSV = () => {
@@ -3521,6 +3589,30 @@
                     }
                 }
                 
+                // Special validation for URL Rules - validate Site ID and Version
+                if (currentObjectType === 'UrlRules') {
+                    const siteId = step3UrlRulesSiteIdInput.value.trim();
+                    const version = step3UrlRulesVersionInput.value.trim();
+                    
+                    if (!siteId) {
+                        conversionStatus.textContent = 'Error: Please enter a Site ID above.';
+                        conversionStatus.classList.add('text-red-500');
+                        step3UrlRulesSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        step3UrlRulesSiteIdInput.classList.add('border-red-500');
+                        setTimeout(() => step3UrlRulesSiteIdInput.classList.remove('border-red-500'), 3000);
+                        return;
+                    }
+                    
+                    if (!version) {
+                        conversionStatus.textContent = 'Error: Please enter an SFCC Version above.';
+                        conversionStatus.classList.add('text-red-500');
+                        step3UrlRulesSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        step3UrlRulesVersionInput.classList.add('border-red-500');
+                        setTimeout(() => step3UrlRulesVersionInput.classList.remove('border-red-500'), 3000);
+                        return;
+                    }
+                }
+                
                 // Get catalog ID from Step 3 input or use special values for non-catalog types
                 const catalogId = catalogRequiredTypes.includes(currentObjectType)
                     ? step3CatalogIdInput.value.trim()
@@ -3560,6 +3652,58 @@
                     conversionStatus.textContent = 'Conversion successful!';
                     conversionStatus.classList.remove('text-red-500');
                     conversionStatus.classList.add('text-green-600');
+                    return;
+                }
+
+                // Special handling for URL Rules - generate ZIP file with proper structure
+                if (currentObjectType === 'UrlRules') {
+                    // Get locale and site ID from Step 3 inputs
+                    const localeInput = step3UrlRulesLocaleInput.value.trim() || 'default';
+                    const locale = localeInput === 'default' ? 'x-default' : normalizeLocale(localeInput);
+                    const siteId = step3UrlRulesSiteIdInput.value.trim();
+                    let replacementsXml = '';
+                    
+                    parsedCsvData.forEach(row => {
+                        const character = row['Character'];
+                        const replacement = row['Replacement'];
+                        if (character && replacement) {
+                            replacementsXml += `\n        <character-replacement>\n            <character>${escapeXml(character.trim())}</character>\n            <replacement>${escapeXml(replacement.trim())}</replacement>\n        </character-replacement>`;
+                        }
+                    });
+                    
+                    const xmlContent = `<?xml version="1.0" encoding="UTF-8"?>\n<url-rules xmlns="http://www.demandware.com/xml/impex/urlrules/2012-12-01">\n    <character-replacements xml:lang="${escapeXml(locale)}">${replacementsXml}\n    </character-replacements>\n</url-rules>`;
+                    
+                    // Create ZIP file with proper structure matching SFCC export format
+                    // Structure: root-folder-name/sites/{siteId}/url-rules.xml
+                    // Also includes version.txt file at root level (required by SFCC)
+                    const zipFileName = `url-rules-${siteId}`;
+                    const zip = new JSZip();
+                    zip.file(`${zipFileName}/sites/${siteId}/url-rules.xml`, xmlContent);
+                    
+                    // Add version.txt file (required by SFCC import)
+                    const version = step3UrlRulesVersionInput.value.trim();
+                    const versionContent = `###########################################\n# Generated file, do not edit.\n# Copyright (c) 2026 by Demandware, Inc.\n###########################################\n${version}\n`;
+                    zip.file(`${zipFileName}/version.txt`, versionContent);
+                    
+                    zip.generateAsync({ type: 'blob' }).then(function(content) {
+                        const url = URL.createObjectURL(content);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `${zipFileName}.zip`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        
+                        conversionStatus.textContent = 'ZIP file generated successfully! Ready for site import.';
+                        conversionStatus.classList.remove('text-red-500');
+                        conversionStatus.classList.add('text-green-600');
+                    }).catch(function(error) {
+                        conversionStatus.textContent = 'Error generating ZIP file: ' + error.message;
+                        conversionStatus.classList.add('text-red-500');
+                        conversionStatus.classList.remove('text-green-600');
+                    });
+                    
                     return;
                 }
 
@@ -4935,6 +5079,9 @@
                 // Hide all help sections first
                 hideAllHelpSections();
                 
+                // Hide URL Rules section by default (will be shown if UrlRules is selected)
+                urlRulesSection.classList.add('hidden');
+                
                 // Show/hide Step 3 fields based on object type
                 const catalogRequiredTypes = ['Product', 'Category', 'VariationMapping', 'ProductRecommendation', 'CategoryAssignment', 'CategoryPosition', 'CategoryAssignmentRules', 'ImageMapping', 'VariationGroup', 'ProductSets'];
                 if (catalogRequiredTypes.includes(currentObjectType)) {
@@ -4971,6 +5118,17 @@
                     step3ContentLibraryIdSection.classList.add('hidden');
                 }
                 
+                // Show/hide URL Rules Locale field
+                if (currentObjectType === 'UrlRules') {
+                    step3UrlRulesSection.classList.remove('hidden');
+                    // Update button text for URL Rules
+                    generateXmlBtn.textContent = 'Generate ZIP File';
+                } else {
+                    step3UrlRulesSection.classList.add('hidden');
+                    // Reset button text for other import types
+                    generateXmlBtn.textContent = 'Generate XML File';
+                }
+                
                 // Handle different UI states based on object type
                 if (currentObjectType === 'VariationMapping') {
                     // Hide locale and attributes sections for Variation Mapping
@@ -4982,7 +5140,7 @@
                     productAttributesDescription.classList.add('hidden');
                     attributesSection.classList.add('hidden');
                     customAttributesSection.classList.add('hidden');
-                    contentAssetSection.classList.add('hidden');
+                    if (contentAssetSection) contentAssetSection.classList.add('hidden');
                     libraryFolderSection.classList.add('hidden');
                     staticCustomerGroupSection.classList.add('hidden');
                     variationMappingSection.classList.remove('hidden');
@@ -5007,7 +5165,7 @@
                     productAttributesDescription.classList.add('hidden');
                     attributesSection.classList.add('hidden');
                     customAttributesSection.classList.add('hidden');
-                    contentAssetSection.classList.add('hidden');
+                    if (contentAssetSection) contentAssetSection.classList.add('hidden');
                     libraryFolderSection.classList.add('hidden');
                     staticCustomerGroupSection.classList.add('hidden');
                     variationMappingSection.classList.add('hidden');
@@ -5032,7 +5190,7 @@
                     productAttributesDescription.classList.add('hidden');
                     attributesSection.classList.add('hidden');
                     customAttributesSection.classList.add('hidden');
-                    contentAssetSection.classList.add('hidden');
+                    if (contentAssetSection) contentAssetSection.classList.add('hidden');
                     libraryFolderSection.classList.add('hidden');
                     staticCustomerGroupSection.classList.add('hidden');
                     variationMappingSection.classList.add('hidden');
@@ -5055,7 +5213,7 @@
                     productAttributesDescription.classList.add('hidden');
                     attributesSection.classList.add('hidden');
                     customAttributesSection.classList.add('hidden');
-                    contentAssetSection.classList.add('hidden');
+                    if (contentAssetSection) contentAssetSection.classList.add('hidden');
                     libraryFolderSection.classList.add('hidden');
                     staticCustomerGroupSection.classList.add('hidden');
                     variationMappingSection.classList.add('hidden');
@@ -5079,7 +5237,7 @@
                     productAttributesDescription.classList.add('hidden');
                     attributesSection.classList.add('hidden');
                     customAttributesSection.classList.add('hidden');
-                    contentAssetSection.classList.add('hidden');
+                    if (contentAssetSection) contentAssetSection.classList.add('hidden');
                     libraryFolderSection.classList.add('hidden');
                     staticCustomerGroupSection.classList.add('hidden');
                     variationMappingSection.classList.add('hidden');
@@ -5103,7 +5261,7 @@
                     productAttributesDescription.classList.add('hidden');
                     attributesSection.classList.add('hidden');
                     customAttributesSection.classList.add('hidden');
-                    contentAssetSection.classList.add('hidden');
+                    if (contentAssetSection) contentAssetSection.classList.add('hidden');
                     libraryFolderSection.classList.add('hidden');
                     staticCustomerGroupSection.classList.add('hidden');
                     variationMappingSection.classList.add('hidden');
@@ -5128,7 +5286,7 @@
                     productAttributesDescription.classList.add('hidden');
                     attributesSection.classList.add('hidden');
                     customAttributesSection.classList.add('hidden');
-                    contentAssetSection.classList.add('hidden');
+                    if (contentAssetSection) contentAssetSection.classList.add('hidden');
                     libraryFolderSection.classList.add('hidden');
                     staticCustomerGroupSection.classList.add('hidden');
                     variationMappingSection.classList.add('hidden');
@@ -5153,7 +5311,7 @@
                     productAttributesDescription.classList.add('hidden');
                     attributesSection.classList.add('hidden');
                     customAttributesSection.classList.add('hidden');
-                    contentAssetSection.classList.add('hidden');
+                    if (contentAssetSection) contentAssetSection.classList.add('hidden');
                     libraryFolderSection.classList.add('hidden');
                     staticCustomerGroupSection.classList.add('hidden');
                     variationMappingSection.classList.add('hidden');
@@ -5176,7 +5334,7 @@
                     productAttributesDescription.classList.add('hidden');
                     attributesSection.classList.add('hidden');
                     customAttributesSection.classList.add('hidden');
-                    contentAssetSection.classList.add('hidden');
+                    if (contentAssetSection) contentAssetSection.classList.add('hidden');
                     libraryFolderSection.classList.add('hidden');
                     staticCustomerGroupSection.classList.add('hidden');
                     variationMappingSection.classList.add('hidden');
@@ -5201,7 +5359,7 @@
                     productAttributesDescription.classList.add('hidden');
                     attributesSection.classList.add('hidden');
                     customAttributesSection.classList.add('hidden');
-                    contentAssetSection.classList.add('hidden');
+                    if (contentAssetSection) contentAssetSection.classList.add('hidden');
                     libraryFolderSection.classList.add('hidden');
                     staticCustomerGroupSection.classList.add('hidden');
                     variationMappingSection.classList.add('hidden');
@@ -5262,7 +5420,7 @@
                     productAttributesDescription.classList.add('hidden');
                     attributesSection.classList.add('hidden');
                     customAttributesSection.classList.add('hidden');
-                    contentAssetSection.classList.add('hidden');
+                    if (contentAssetSection) contentAssetSection.classList.add('hidden');
                     libraryFolderSection.classList.remove('hidden');
                     staticCustomerGroupSection.classList.add('hidden');
                     variationMappingSection.classList.add('hidden');
@@ -5287,7 +5445,7 @@
                     productAttributesDescription.classList.add('hidden');
                     attributesSection.classList.add('hidden');
                     customAttributesSection.classList.add('hidden');
-                    contentAssetSection.classList.add('hidden');
+                    if (contentAssetSection) contentAssetSection.classList.add('hidden');
                     libraryFolderSection.classList.add('hidden');
                     staticCustomerGroupSection.classList.remove('hidden');
                     variationMappingSection.classList.add('hidden');
@@ -5312,7 +5470,7 @@
                     productAttributesDescription.classList.add('hidden');
                     attributesSection.classList.add('hidden');
                     customAttributesSection.classList.add('hidden');
-                    contentAssetSection.classList.add('hidden');
+                    if (contentAssetSection) contentAssetSection.classList.add('hidden');
                     libraryFolderSection.classList.add('hidden');
                     staticCustomerGroupSection.classList.add('hidden');
                     variationMappingSection.classList.add('hidden');
@@ -5344,7 +5502,7 @@
                     productAttributesDescription.classList.add('hidden');
                     attributesSection.classList.add('hidden');
                     customAttributesSection.classList.add('hidden');
-                    contentAssetSection.classList.add('hidden');
+                    if (contentAssetSection) contentAssetSection.classList.add('hidden');
                     libraryFolderSection.classList.add('hidden');
                     staticCustomerGroupSection.classList.add('hidden');
                     variationMappingSection.classList.add('hidden');
@@ -5359,6 +5517,36 @@
                     inventorySection.classList.add('hidden');
                     productSetsSection.classList.add('hidden');
                     couponCodeSection.classList.remove('hidden');
+                    urlRulesSection.classList.add('hidden');
+                } else if (currentObjectType === 'UrlRules') {
+                    // Show simple section for URL Rules
+                    localeSection.classList.add('hidden');
+                    localeSectionMoved.classList.add('hidden');
+                    siteSection.classList.add('hidden');
+                    siteSectionMoved.classList.add('hidden');
+                    productAttributesDescription.classList.add('hidden');
+                    attributesSection.classList.add('hidden');
+                    customAttributesSection.classList.add('hidden');
+                    if (contentAssetSection) contentAssetSection.classList.add('hidden');
+                    libraryFolderSection.classList.add('hidden');
+                    staticCustomerGroupSection.classList.add('hidden');
+                    variationMappingSection.classList.add('hidden');
+                    productRecommendationSection.classList.add('hidden');
+                    categoryAssignmentSection.classList.add('hidden');
+                    categoryPositionSection.classList.add('hidden');
+                    categoryAssignmentRulesSection.classList.add('hidden');
+                    searchRefinementDefinitionsSection.classList.add('hidden');
+                    imageMappingSection.classList.add('hidden');
+                    variationGroupSection.classList.add('hidden');
+                    pricesSection.classList.add('hidden');
+                    inventorySection.classList.add('hidden');
+                    productSetsSection.classList.add('hidden');
+                    couponCodeSection.classList.add('hidden');
+                    urlRulesSection.classList.remove('hidden');
+                    // Ensure the section is visible
+                    if (urlRulesSection) {
+                        urlRulesSection.style.display = '';
+                    }
                 } else {
                     // Show locale, site, and attributes sections for Product, Category, and Customer
                     if (currentObjectType === 'Customer') {
@@ -5388,7 +5576,7 @@
                     
                     attributesSection.classList.remove('hidden');
                     customAttributesSection.classList.remove('hidden');
-                    contentAssetSection.classList.add('hidden');
+                    if (contentAssetSection) contentAssetSection.classList.add('hidden');
                     libraryFolderSection.classList.add('hidden');
                     staticCustomerGroupSection.classList.add('hidden');
                     variationMappingSection.classList.add('hidden');
@@ -5474,6 +5662,7 @@
             generatePricesCsvBtn.addEventListener('click', generatePricesCSV);
             generateInventoryCsvBtn.addEventListener('click', generateInventoryCSV);
             generateCouponCodeCsvBtn.addEventListener('click', generateCSV);
+            generateUrlRulesCsvBtn.addEventListener('click', generateUrlRulesCSV);
             generateLibraryFolderCsvBtn.addEventListener('click', generateLibraryFolderCSV);
             generateStaticCustomerGroupCsvBtn.addEventListener('click', generateStaticCustomerGroupCSV);
             generateProductSetsCsvBtn.addEventListener('click', generateProductSetsCSV);
