@@ -3667,7 +3667,9 @@
                         const character = row['Character'];
                         const replacement = row['Replacement'];
                         if (character && replacement) {
-                            replacementsXml += `\n        <character-replacement>\n            <character>${escapeXml(character.trim())}</character>\n            <replacement>${escapeXml(replacement.trim())}</replacement>\n        </character-replacement>`;
+                            // Preserve Unicode characters (accented chars, special symbols) for URL Rules
+                            // Only escape XML special characters (<, >, &, ', ") but keep accented characters intact
+                            replacementsXml += `\n        <character-replacement>\n            <character>${escapeXml(character.trim(), true)}</character>\n            <replacement>${escapeXml(replacement.trim(), true)}</replacement>\n        </character-replacement>`;
                         }
                     });
                     
