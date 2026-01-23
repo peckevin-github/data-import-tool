@@ -3661,8 +3661,27 @@
                     const localeInput = step3UrlRulesLocaleInput.value.trim() || 'default';
                     const locale = localeInput === 'default' ? 'x-default' : normalizeLocale(localeInput);
                     const siteId = step3UrlRulesSiteIdInput.value.trim();
-                    let replacementsXml = '';
                     
+                    // Count valid character-replacement entries
+                    let replacementCount = 0;
+                    parsedCsvData.forEach(row => {
+                        const character = row['Character'];
+                        const replacement = row['Replacement'];
+                        if (character && replacement) {
+                            replacementCount++;
+                        }
+                    });
+                    
+                    // SFCC has a hard limit of 50 character-replacements per locale
+                    if (replacementCount > 50) {
+                        conversionStatus.textContent = `Error: SFCC only supports a maximum of 50 character replacements per locale. Your CSV contains ${replacementCount} entries. Please reduce the number of entries to 50 or fewer.`;
+                        conversionStatus.classList.add('text-red-500');
+                        conversionStatus.classList.remove('text-green-600');
+                        step3UrlRulesSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        return;
+                    }
+                    
+                    let replacementsXml = '';
                     parsedCsvData.forEach(row => {
                         const character = row['Character'];
                         const replacement = row['Replacement'];
