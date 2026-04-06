@@ -1569,7 +1569,7 @@
             <!-- Prices Fields (Price Book ID and Currency) -->
             <div id="step3-prices-section" class="mb-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200 hidden">
                 <h4 class="font-semibold text-slate-700 mb-3">Prices Configuration</h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                         <label for="step3-pricebook-id" class="block text-sm font-medium text-slate-700 mb-2">Price Book ID <span class="text-red-500">*</span></label>
                         <input type="text" id="step3-pricebook-id" placeholder="e.g., 'usd-list-prices'" class="w-full px-4 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow">
@@ -1580,7 +1580,85 @@
                         <input type="text" id="step3-currency" placeholder="e.g., 'USD'" class="w-full px-4 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow">
                         <p class="text-xs text-slate-500 mt-1">Required for XML generation</p>
                     </div>
+                    <div>
+                        <label for="step3-site-timezone" class="block text-sm font-medium text-slate-700 mb-2">Site Timezone</label>
+                        <select id="step3-site-timezone" class="w-full px-4 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-shadow">
+                            <option value="UTC">UTC</option>
+                            <optgroup label="North America">
+                                <option value="America/New_York">Eastern Time (New York)</option>
+                                <option value="America/Chicago">Central Time (Chicago)</option>
+                                <option value="America/Denver">Mountain Time (Denver)</option>
+                                <option value="America/Phoenix">Mountain Time – no DST (Phoenix)</option>
+                                <option value="America/Los_Angeles">Pacific Time (Los Angeles)</option>
+                                <option value="America/Anchorage">Alaska Time (Anchorage)</option>
+                                <option value="America/Honolulu">Hawaii Time (Honolulu)</option>
+                                <option value="America/Toronto">Eastern Time (Toronto)</option>
+                                <option value="America/Vancouver">Pacific Time (Vancouver)</option>
+                                <option value="America/Winnipeg">Central Time (Winnipeg)</option>
+                                <option value="America/Edmonton">Mountain Time (Edmonton)</option>
+                            </optgroup>
+                            <optgroup label="South America">
+                                <option value="America/Sao_Paulo">Brazil (São Paulo)</option>
+                                <option value="America/Argentina/Buenos_Aires">Argentina (Buenos Aires)</option>
+                                <option value="America/Bogota">Colombia (Bogotá)</option>
+                                <option value="America/Lima">Peru (Lima)</option>
+                            </optgroup>
+                            <optgroup label="Europe">
+                                <option value="Europe/London">GMT/BST (London)</option>
+                                <option value="Europe/Paris">Central European (Paris)</option>
+                                <option value="Europe/Berlin">Central European (Berlin)</option>
+                                <option value="Europe/Amsterdam">Central European (Amsterdam)</option>
+                                <option value="Europe/Madrid">Central European (Madrid)</option>
+                                <option value="Europe/Rome">Central European (Rome)</option>
+                                <option value="Europe/Stockholm">Central European (Stockholm)</option>
+                                <option value="Europe/Helsinki">Eastern European (Helsinki)</option>
+                                <option value="Europe/Athens">Eastern European (Athens)</option>
+                                <option value="Europe/Moscow">Moscow Time</option>
+                            </optgroup>
+                            <optgroup label="Africa">
+                                <option value="Africa/Cairo">Egypt (Cairo)</option>
+                                <option value="Africa/Johannesburg">South Africa (Johannesburg)</option>
+                                <option value="Africa/Lagos">West Africa (Lagos)</option>
+                            </optgroup>
+                            <optgroup label="Middle East">
+                                <option value="Asia/Dubai">Gulf Time (Dubai)</option>
+                                <option value="Asia/Riyadh">Arabia Time (Riyadh)</option>
+                                <option value="Asia/Tehran">Iran Time (Tehran)</option>
+                            </optgroup>
+                            <optgroup label="Asia">
+                                <option value="Asia/Karachi">Pakistan (Karachi)</option>
+                                <option value="Asia/Kolkata">India (Kolkata)</option>
+                                <option value="Asia/Dhaka">Bangladesh (Dhaka)</option>
+                                <option value="Asia/Bangkok">Indochina (Bangkok)</option>
+                                <option value="Asia/Singapore">Singapore</option>
+                                <option value="Asia/Hong_Kong">Hong Kong</option>
+                                <option value="Asia/Shanghai">China (Shanghai)</option>
+                                <option value="Asia/Tokyo">Japan (Tokyo)</option>
+                                <option value="Asia/Seoul">Korea (Seoul)</option>
+                            </optgroup>
+                            <optgroup label="Australia &amp; Pacific">
+                                <option value="Australia/Perth">Western Australia (Perth)</option>
+                                <option value="Australia/Darwin">Northern Territory (Darwin)</option>
+                                <option value="Australia/Adelaide">South Australia (Adelaide)</option>
+                                <option value="Australia/Sydney">Eastern Australia (Sydney)</option>
+                                <option value="Australia/Melbourne">Eastern Australia (Melbourne)</option>
+                                <option value="Pacific/Auckland">New Zealand (Auckland)</option>
+                            </optgroup>
+                        </select>
+                        <p class="text-xs text-slate-500 mt-1">Timezone of your SFCC site — auto-detected from your browser</p>
+                    </div>
                 </div>
+                <script>
+                    (function() {
+                        const sel = document.getElementById('step3-site-timezone');
+                        const saved = localStorage.getItem('sfcc-site-timezone');
+                        const detected = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                        const preferred = saved || detected;
+                        const match = Array.from(sel.options).find(o => o.value === preferred);
+                        if (match) match.selected = true;
+                        sel.addEventListener('change', () => localStorage.setItem('sfcc-site-timezone', sel.value));
+                    })();
+                </script>
             </div>
             
             <!-- Inventory Field (Inventory List ID) -->
@@ -4132,6 +4210,21 @@
                         
                         if (!productId || !price) return; // Skip rows without required data
                         
+                        // Read the site timezone from the dropdown (IANA name, e.g. "America/New_York")
+                        const siteTimezone = (document.getElementById('step3-site-timezone') || {}).value || 'UTC';
+
+                        // Convert a YYYY-MM-DD string to a UTC ISO string representing midnight in siteTimezone.
+                        // Uses noon UTC as a DST-safe reference to calculate the exact offset for that date.
+                        const localMidnightToISO = (dateStr) => {
+                            const [year, month, day] = dateStr.split('-').map(Number);
+                            const noonUTC = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+                            // sv-SE locale gives "YYYY-MM-DD HH:MM:SS" — reliable cross-browser
+                            const localNoonStr = noonUTC.toLocaleString('sv-SE', { timeZone: siteTimezone });
+                            const localNoon = new Date(localNoonStr.replace(' ', 'T') + 'Z');
+                            const offsetMs = noonUTC.getTime() - localNoon.getTime();
+                            return new Date(Date.UTC(year, month - 1, day, 0, 0, 0) + offsetMs).toISOString();
+                        };
+
                         // Helper function to parse various date formats and convert to ISO format
                         const parseAndFormatDate = (dateStr) => {
                             if (!dateStr || dateStr.trim() === '') return null;
@@ -4143,9 +4236,9 @@
                                 return trimmed;
                             }
                             
-                            // If in YYYY-MM-DD format, convert local midnight to UTC so SFCC receives the correct time
+                            // If in YYYY-MM-DD format, convert site-timezone midnight to UTC
                             if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
-                                return new Date(trimmed + 'T00:00:00').toISOString();
+                                return localMidnightToISO(trimmed);
                             }
                             
                             // Handle MM/DD/YY or MM/DD/YYYY formats (with various separators)
@@ -4172,7 +4265,7 @@
                                         year = '20' + year;
                                     }
                                     
-                                    return new Date(`${year}-${month}-${day}T00:00:00`).toISOString();
+                                    return localMidnightToISO(`${year}-${month}-${day}`);
                                 }
                             }
                             
