@@ -4138,14 +4138,14 @@
                             
                             const trimmed = dateStr.trim();
                             
-                            // If already in ISO format (YYYY-MM-DDTHH:MM:SS.SSSZ), return as-is
-                            if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(trimmed)) {
+                            // If already in full ISO format with timezone (YYYY-MM-DDTHH:MM:SS.SSSZ or with offset), return as-is
+                            if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})$/.test(trimmed)) {
                                 return trimmed;
                             }
                             
-                            // If in YYYY-MM-DD format, append time (no Z suffix so SFCC treats it as site-local time)
+                            // If in YYYY-MM-DD format, convert local midnight to UTC so SFCC receives the correct time
                             if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
-                                return trimmed + 'T00:00:00.000';
+                                return new Date(trimmed + 'T00:00:00').toISOString();
                             }
                             
                             // Handle MM/DD/YY or MM/DD/YYYY formats (with various separators)
@@ -4172,7 +4172,7 @@
                                         year = '20' + year;
                                     }
                                     
-                                    return `${year}-${month}-${day}T00:00:00.000`;
+                                    return new Date(`${year}-${month}-${day}T00:00:00`).toISOString();
                                 }
                             }
                             
