@@ -1722,7 +1722,6 @@
                 const userSet = localStorage.getItem('sfcc-site-timezone-user-set') === 'true';
                 const saved = userSet ? localStorage.getItem('sfcc-site-timezone') : null;
                 const preferred = saved || detected;
-                console.log('[Timezone] detected:', detected, '| saved:', saved, '| preferred:', preferred);
                 let match = Array.from(tzSel.options).find(o => o.value === preferred);
                 // If the detected timezone isn't in the list, insert it dynamically
                 if (!match && preferred) {
