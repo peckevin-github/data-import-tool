@@ -1651,12 +1651,17 @@
                 <script>
                     (function() {
                         const sel = document.getElementById('step3-site-timezone');
-                        const saved = localStorage.getItem('sfcc-site-timezone');
                         const detected = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                        // Only use saved value if the user explicitly set it (not a leftover default)
+                        const userSet = localStorage.getItem('sfcc-site-timezone-user-set') === 'true';
+                        const saved = userSet ? localStorage.getItem('sfcc-site-timezone') : null;
                         const preferred = saved || detected;
                         const match = Array.from(sel.options).find(o => o.value === preferred);
                         if (match) match.selected = true;
-                        sel.addEventListener('change', () => localStorage.setItem('sfcc-site-timezone', sel.value));
+                        sel.addEventListener('change', () => {
+                            localStorage.setItem('sfcc-site-timezone', sel.value);
+                            localStorage.setItem('sfcc-site-timezone-user-set', 'true');
+                        });
                     })();
                 </script>
             </div>
