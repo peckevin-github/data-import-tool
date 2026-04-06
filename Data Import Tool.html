@@ -919,7 +919,7 @@
                                     <th class="px-4 py-2 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">Attribute ID</th>
                                     <th class="px-4 py-2 text-left text-xs font-medium text-slate-700 uppercase tracking-wider">Type</th>
                                     <th class="px-4 py-2 text-center text-xs font-medium text-slate-700 uppercase tracking-wider w-20">Localizable</th>
-                                    <th class="px-4 py-2 text-center text-xs font-medium text-slate-700 uppercase tracking-wider w-20">Site-Specific</th>
+                                    <th id="custom-attr-site-specific-header" class="px-4 py-2 text-center text-xs font-medium text-slate-700 uppercase tracking-wider w-20">Site-Specific</th>
                                     <th class="px-4 py-2 text-center text-xs font-medium text-slate-700 uppercase tracking-wider w-16">Action</th>
                                 </tr>
                             </thead>
@@ -1108,7 +1108,7 @@
                             <div class="help-content p-4 pt-0 hidden">
                                 <p class="text-sm text-blue-800 mb-3">Categorization rules automatically assign products to categories based on product attributes. Business Manager evaluates the rules when the XML is imported.</p>
                                 <ol class="text-sm text-blue-800 space-y-2 ml-4 list-decimal">
-                                    <li><strong>Generate template:</strong> Click "Generate CSV Template" to download the template (35 columns)</li>
+                                    <li><strong>Generate template:</strong> Click "Generate CSV Template" to download the template (37 columns)</li>
                                     <li><strong>Define rules:</strong> Each row = one rule with configuration and up to 10 conditions</li>
                                     <li><strong>Upload & convert:</strong> Upload CSV in Step 3, enter Catalog ID, and generate XML</li>
                                 </ol>
@@ -1132,21 +1132,23 @@
                     
                     <!-- CSV Structure Info -->
                     <div class="bg-white p-4 rounded-lg border border-slate-300 mb-6">
-                        <h4 class="font-semibold text-slate-800 mb-3">CSV Structure (35 columns):</h4>
+                        <h4 class="font-semibold text-slate-800 mb-3">CSV Structure (37 columns):</h4>
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
                             <div class="bg-slate-50 p-3 rounded border border-slate-200">
-                                <p class="text-xs font-semibold text-slate-700 mb-2">Configuration (Columns A-E):</p>
+                                <p class="text-xs font-semibold text-slate-700 mb-2">Configuration (Columns A-G):</p>
                                 <ul class="text-xs text-slate-600 space-y-1 ml-3 list-disc">
                                     <li>Category ID (required)</li>
+                                    <li>Category Name (optional - adds &lt;display-name&gt; to XML when populated)</li>
+                                    <li>Parent Category ID (optional - adds &lt;parent&gt; to XML when populated)</li>
                                     <li>Locale (default: "default")</li>
-                                    <li>Site Context (default: "default")</li>
+                                    <li>Site ID (optional - adds site-id attribute when populated; default: omitted)</li>
                                     <li>Primary Category Assignment (default: false)</li>
                                     <li>Classification Category Assignment (default: false)</li>
                                 </ul>
                             </div>
                             <div class="bg-slate-50 p-3 rounded border border-slate-200">
-                                <p class="text-xs font-semibold text-slate-700 mb-2">Conditions (Columns F onwards):</p>
+                                <p class="text-xs font-semibold text-slate-700 mb-2">Conditions (Columns H onwards):</p>
                                 <ul class="text-xs text-slate-600 space-y-1 ml-3 list-disc">
                                     <li>Up to 10 conditions per rule</li>
                                     <li>Each condition = 3 columns:</li>
@@ -1173,7 +1175,7 @@
                         <div class="mt-3 p-3 bg-amber-50 rounded border border-amber-200">
                             <p class="text-xs font-semibold text-amber-900 mb-1">Quick Tips:</p>
                             <ul class="text-xs text-amber-800 space-y-0.5 ml-3 list-disc">
-                                <li>Leave blank: Locale/Site Context → "default", Primary/Classification → false</li>
+                                <li>Leave blank: Category Name (no &lt;display-name&gt;), Parent Category ID (no &lt;parent&gt;), Locale → "default", Site ID (no site-id attribute), Primary/Classification → false</li>
                                 <li>Boolean values: true/false, yes/no, 1/0 (case-insensitive)</li>
                                 <li>For <strong>is_one_of/not_one_of</strong>: Use comma-separated values (e.g., "red,blue,green")</li>
                                 <li>For <strong>is_defined/is_not_defined</strong>: Leave Value column empty</li>
@@ -2153,8 +2155,8 @@
                     // Convert to XML element name for display
                     const displayName = convertToXmlElementName(attr);
                     
-                    // Globe icon for site-specific (blue)
-                    const globeIcon = isSiteSpecific ? '<svg class="w-3 h-3 ml-1 inline text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.977 5.977 0 0116 10c0 .34-.028.675-.083 1H15a2 2 0 00-2 2v2.197A5.973 5.973 0 0110 16v-2a2 2 0 00-2-2 2 2 0 01-2-2 2 2 0 00-1.668-1.973z" clip-rule="evenodd"/></svg>' : '';
+                    // Globe icon for site-specific (blue) - hide for Category imports since categories don't support site-id
+                    const globeIcon = (isSiteSpecific && currentObjectType !== 'Category') ? '<svg class="w-3 h-3 ml-1 inline text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.977 5.977 0 0116 10c0 .34-.028.675-.083 1H15a2 2 0 00-2 2v2.197A5.973 5.973 0 0110 16v-2a2 2 0 00-2-2 2 2 0 01-2-2 2 2 0 00-1.668-1.973z" clip-rule="evenodd"/></svg>' : '';
                     
                     // Language icon for localizable (purple)
                     const langIcon = isLocalizable ? '<svg class="w-3 h-3 ml-1 inline text-purple-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M7 2a1 1 0 011 1v1h3a1 1 0 110 2H9.578a18.87 18.87 0 01-1.724 4.78c.29.354.596.696.914 1.026a1 1 0 11-1.44 1.389c-.188-.196-.373-.396-.554-.6a19.098 19.098 0 01-3.107 3.567 1 1 0 01-1.334-1.49 17.087 17.087 0 003.13-3.733 18.992 18.992 0 01-1.487-2.494 1 1 0 111.79-.89c.234.47.489.928.764 1.372.417-.934.752-1.913.997-2.927H3a1 1 0 110-2h3V3a1 1 0 011-1zm6 6a1 1 0 01.894.553l2.991 5.982a.869.869 0 01.02.037l.99 1.98a1 1 0 11-1.79.895L15.383 16h-4.764l-.724 1.447a1 1 0 11-1.788-.894l.99-1.98.019-.038 2.99-5.982A1 1 0 0113 8zm-1.382 6h2.764L13 11.236 11.618 14z" clip-rule="evenodd"/></svg>' : '';
@@ -2204,6 +2206,10 @@
                     // Convert to XML element name for display if it's a standard attribute (and not custom)
                     const displayName = isCustom ? attr : convertToXmlElementName(attr);
                     
+                    // Determine if site-specific option should be shown
+                    // Category standard attributes do NOT support site-id in the SFCC schema
+                    const showSiteSpecific = currentObjectType !== 'Category';
+                    
                     // Build the content with checkboxes
                     div.innerHTML = `
                         <div class="flex items-center justify-between mb-2">
@@ -2225,14 +2231,14 @@
                                     Localizable
                                 </span>
                             </label>
-                            <label class="flex items-center cursor-pointer hover:bg-slate-50 px-2 py-1 rounded transition-colors">
+                            ${showSiteSpecific ? `<label class="flex items-center cursor-pointer hover:bg-slate-50 px-2 py-1 rounded transition-colors">
                                 <input type="checkbox" class="attr-site-specific h-3.5 w-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 mr-1.5" 
                                        data-attr="${attr}" ${attrFlags.siteSpecific ? 'checked' : ''}>
                                 <span class="text-blue-700 flex items-center">
                                     <svg class="w-3.5 h-3.5 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM4.332 8.027a6.012 6.012 0 011.912-2.706C6.512 5.73 6.974 6 7.5 6A1.5 1.5 0 019 7.5V8a2 2 0 004 0 2 2 0 011.523-1.943A5.977 5.977 0 0116 10c0 .34-.028.675-.083 1H15a2 2 0 00-2 2v2.197A5.973 5.973 0 0110 16v-2a2 2 0 00-2-2 2 2 0 01-2-2 2 2 0 00-1.668-1.973z" clip-rule="evenodd"/></svg>
                                     Site-Specific
                                 </span>
-                            </label>
+                            </label>` : ''}
                         </div>
                     `;
                     
@@ -2244,7 +2250,7 @@
                     
                     localizableCheckbox.addEventListener('change', (e) => {
                         attributeFlags[attr].localizable = e.target.checked;
-                        if (e.target.checked) {
+                        if (e.target.checked && siteSpecificCheckbox) {
                             // Auto-uncheck site-specific when localizable is checked
                             attributeFlags[attr].siteSpecific = false;
                             siteSpecificCheckbox.checked = false;
@@ -2252,15 +2258,20 @@
                         updateLocaleAndSiteSections();
                     });
                     
-                    siteSpecificCheckbox.addEventListener('change', (e) => {
-                        attributeFlags[attr].siteSpecific = e.target.checked;
-                        if (e.target.checked) {
-                            // Auto-uncheck localizable when site-specific is checked
-                            attributeFlags[attr].localizable = false;
-                            localizableCheckbox.checked = false;
-                        }
-                        updateLocaleAndSiteSections();
-                    });
+                    if (siteSpecificCheckbox) {
+                        siteSpecificCheckbox.addEventListener('change', (e) => {
+                            attributeFlags[attr].siteSpecific = e.target.checked;
+                            if (e.target.checked) {
+                                // Auto-uncheck localizable when site-specific is checked
+                                attributeFlags[attr].localizable = false;
+                                localizableCheckbox.checked = false;
+                            }
+                            updateLocaleAndSiteSections();
+                        });
+                    } else {
+                        // For Category imports, ensure site-specific flag is always false
+                        attributeFlags[attr].siteSpecific = false;
+                    }
                 });
             };
             
@@ -2333,6 +2344,8 @@
                 row.className = 'hover:bg-slate-50';
                 
                 const rowId = `attr-row-${Date.now()}-${Math.random()}`;
+                // Category imports do not support site-specific attributes
+                const showSiteSpecificCol = currentObjectType !== 'Category';
                 
                 row.innerHTML = `
                     <td class="px-4 py-2">
@@ -2349,10 +2362,10 @@
                                    data-row-id="${rowId}" title="Mark as localizable">
                         </div>
                     </td>
-                    <td class="px-4 py-2 text-center">
+                    <td class="px-4 py-2 text-center custom-attr-site-specific-cell" ${!showSiteSpecificCol ? 'style="display:none;"' : ''}>
                         <div class="relative inline-block">
                             <input type="checkbox" class="custom-attr-site-specific h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" 
-                                   ${isSiteSpecific ? 'checked' : ''} 
+                                   ${isSiteSpecific && showSiteSpecificCol ? 'checked' : ''} 
                                    data-row-id="${rowId}" title="Mark as site-specific">
                         </div>
                     </td>
@@ -2374,18 +2387,20 @@
                 const siteSpecificCheckbox = row.querySelector('.custom-attr-site-specific');
                 
                 localizableCheckbox.addEventListener('change', () => {
-                    if (localizableCheckbox.checked) {
+                    if (localizableCheckbox.checked && siteSpecificCheckbox) {
                         // Auto-uncheck site-specific when localizable is checked
                         siteSpecificCheckbox.checked = false;
                     }
                 });
                 
-                siteSpecificCheckbox.addEventListener('change', () => {
-                    if (siteSpecificCheckbox.checked) {
-                        // Auto-uncheck localizable when site-specific is checked
-                        localizableCheckbox.checked = false;
-                    }
-                });
+                if (siteSpecificCheckbox) {
+                    siteSpecificCheckbox.addEventListener('change', () => {
+                        if (siteSpecificCheckbox.checked) {
+                            // Auto-uncheck localizable when site-specific is checked
+                            localizableCheckbox.checked = false;
+                        }
+                    });
+                }
                 
                 // Focus on the name input
                 const nameInput = row.querySelector('.custom-attr-name');
@@ -2407,8 +2422,8 @@
                     
                     const name = nameInput.value.trim();
                     const type = typeSelect.value || 'String';
-                    const isLocalizable = localizableCheckbox.checked;
-                    const isSiteSpecific = siteSpecificCheckbox.checked;
+                    const isLocalizable = localizableCheckbox ? localizableCheckbox.checked : false;
+                    const isSiteSpecific = siteSpecificCheckbox ? siteSpecificCheckbox.checked : false;
                     
                     // Allow custom attributes even if they have the same name as standard attributes
                     // Check only for duplicates within selected custom attributes
@@ -2430,10 +2445,12 @@
                         // Clear the row after successful addition
                         nameInput.value = '';
                         typeSelect.value = '';
-                        localizableCheckbox.checked = false;
-                        siteSpecificCheckbox.checked = false;
-                        siteSpecificCheckbox.disabled = false;
-                        localizableCheckbox.disabled = false;
+                        if (localizableCheckbox) localizableCheckbox.checked = false;
+                        if (siteSpecificCheckbox) {
+                            siteSpecificCheckbox.checked = false;
+                            siteSpecificCheckbox.disabled = false;
+                        }
+                        if (localizableCheckbox) localizableCheckbox.disabled = false;
                     } else if (name) {
                         duplicates.push(name);
                         // Highlight the duplicate row
@@ -2530,7 +2547,7 @@
 
             // Categorization Rules - CSV generation with config columns and 10 conditions
             const generateCategoryAssignmentRulesCSV = () => {
-                const headers = ['Category ID', 'Locale', 'Site Context', 'Primary Category Assignment', 'Classification Category Assignment'];
+                const headers = ['Category ID', 'Category Name', 'Parent Category ID', 'Locale', 'Site ID', 'Primary Category Assignment', 'Classification Category Assignment'];
                 
                 // Add headers for 10 conditions (3 columns each)
                 for (let i = 1; i <= 10; i++) {
@@ -3851,7 +3868,7 @@
                         
                         // Read configuration columns with defaults
                         let locale = normalizeLocale(row['Locale'] || 'default');
-                        let siteContext = row['Site Context'] || 'default';
+                        let siteContext = (row['Site ID'] || row['Site Context'] || 'default').toString().trim() || 'default';
                         
                         // Parse boolean values robustly
                         const parseBooleanValue = (value) => {
@@ -3885,10 +3902,20 @@
                         }
                         
                         if (!window.categoryAssignmentRulesByCategory[categoryId]) {
-                            window.categoryAssignmentRulesByCategory[categoryId] = [];
+                            window.categoryAssignmentRulesByCategory[categoryId] = { rules: [], displayName: null, parentCategoryId: null };
                         }
                         
-                        window.categoryAssignmentRulesByCategory[categoryId].push({ 
+                        const categoryName = row['Category Name'] ? row['Category Name'].trim() : '';
+                        if (categoryName && !window.categoryAssignmentRulesByCategory[categoryId].displayName) {
+                            window.categoryAssignmentRulesByCategory[categoryId].displayName = categoryName;
+                        }
+                        
+                        const parentCategoryId = row['Parent Category ID'] ? row['Parent Category ID'].trim() : '';
+                        if (parentCategoryId && !window.categoryAssignmentRulesByCategory[categoryId].parentCategoryId) {
+                            window.categoryAssignmentRulesByCategory[categoryId].parentCategoryId = parentCategoryId;
+                        }
+                        
+                        window.categoryAssignmentRulesByCategory[categoryId].rules.push({ 
                             conditions,
                             locale,
                             siteContext,
@@ -4116,9 +4143,9 @@
                                 return trimmed;
                             }
                             
-                            // If in YYYY-MM-DD format, append time
+                            // If in YYYY-MM-DD format, append time (no Z suffix so SFCC treats it as site-local time)
                             if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
-                                return trimmed + 'T00:00:00.000Z';
+                                return trimmed + 'T00:00:00.000';
                             }
                             
                             // Handle MM/DD/YY or MM/DD/YYYY formats (with various separators)
@@ -4145,7 +4172,7 @@
                                         year = '20' + year;
                                     }
                                     
-                                    return `${year}-${month}-${day}T00:00:00.000Z`;
+                                    return `${year}-${month}-${day}T00:00:00.000`;
                                 }
                             }
                             
@@ -4669,7 +4696,8 @@
                                     if (pageLocale) {
                                         elementAttributes += ` xml:lang="${selectedLocale}"`;
                                     }
-                                    if (useSiteSpecific && siteId) {
+                                    // Only Product page attributes support site-id
+                                    if (useSiteSpecific && siteId && currentObjectType === 'Product') {
                                         elementAttributes += ` site-id="${siteId}"`;
                                     }
                                     
@@ -4704,7 +4732,8 @@
                             elementAttributes += ` xml:lang="${selectedLocale}"`;
                         }
                         // Use global site ID input for site-specific attributes
-                        if (isSiteSpecific && siteId) {
+                        // Only Product standard attributes support site-id; Category standard attributes do NOT
+                        if (isSiteSpecific && siteId && currentObjectType === 'Product') {
                             elementAttributes += ` site-id="${siteId}"`;
                         }
                         
@@ -4732,7 +4761,8 @@
                             if (pageLocale2) {
                                 elementAttributes += ` xml:lang="${selectedLocale}"`;
                             }
-                            if (useSiteSpecific && siteId) {
+                            // Only Product page attributes support site-id
+                            if (useSiteSpecific && siteId && currentObjectType === 'Product') {
                                 elementAttributes += ` site-id="${siteId}"`;
                             }
                             
@@ -4761,7 +4791,8 @@
                             if (customLocale) {
                                 elementAttributes += ` xml:lang="${selectedLocale}"`;
                             }
-                            if (useSiteSpecific && siteId && isSiteSpecific) {
+                            // Only Product imports support site-id on custom attributes; Category does NOT
+                            if (useSiteSpecific && siteId && isSiteSpecific && currentObjectType !== 'Category') {
                                 elementAttributes += ` site-id="${siteId}"`;
                             }
                             
@@ -4957,13 +4988,19 @@
                     let conditionIdCounter = 1;
                     
                     // Generate XML for each category with its rules
-                    for (const [categoryId, rules] of Object.entries(window.categoryAssignmentRulesByCategory)) {
+                    for (const [categoryId, categoryData] of Object.entries(window.categoryAssignmentRulesByCategory)) {
                         categoriesXml += `\n    <category category-id="${escapeXml(categoryId)}">`;
+                        if (categoryData.displayName) {
+                            categoriesXml += `\n        <display-name xml:lang="x-default">${escapeXml(categoryData.displayName)}</display-name>`;
+                        }
+                        if (categoryData.parentCategoryId) {
+                            categoriesXml += `\n        <parent>${escapeXml(categoryData.parentCategoryId)}</parent>`;
+                        }
                         categoriesXml += '\n        <categorization-rules-and-excluded-products>';
                         
                         // Group rules by their configuration (locale, site context, primary/classification flags)
                         const ruleGroups = {};
-                        rules.forEach(rule => {
+                        categoryData.rules.forEach(rule => {
                             const groupKey = `${rule.locale}|${rule.siteContext}|${rule.primaryCategoryAssignment}|${rule.classificationCategoryAssignment}`;
                             if (!ruleGroups[groupKey]) {
                                 ruleGroups[groupKey] = {
@@ -4982,16 +5019,13 @@
                             // Convert locale: "default" becomes "x-default" for XML
                             const xmlLang = group.locale === 'default' ? 'x-default' : group.locale;
                             
-                            // Build the categorization-rules element with attributes
+                            // Build the categorization-rules element with attributes (order: xml:lang, site-id, primary, classification)
                             let rulesElement = `\n            <categorization-rules xml:lang="${escapeXml(xmlLang)}"`;
+                            if (group.siteContext && group.siteContext !== 'default') {
+                                rulesElement += ` site-id="${escapeXml(group.siteContext)}"`;
+                            }
                             rulesElement += ` primary-category-assignment="${group.primaryCategoryAssignment}"`;
                             rulesElement += ` classification-category-assignment="${group.classificationCategoryAssignment}"`;
-                            
-                            // Add site-context attribute if not default
-                            if (group.siteContext !== 'default') {
-                                rulesElement += ` site-context="${escapeXml(group.siteContext)}"`;
-                            }
-                            
                             rulesElement += '>';
                             categoriesXml += rulesElement;
                             
@@ -5093,6 +5127,12 @@
                     customAttributeTypes = {}; // Reset custom attribute types
                     attributeFlags = {}; // Reset custom attribute flags
                 parsedCsvData = null;
+                
+                // Hide Site-Specific column header for Category imports (categories don't support site-id)
+                const customAttrSiteSpecificHeader = document.getElementById('custom-attr-site-specific-header');
+                if (customAttrSiteSpecificHeader) {
+                    customAttrSiteSpecificHeader.style.display = currentObjectType === 'Category' ? 'none' : '';
+                }
                     
                 attributeSection.classList.remove('hidden');
                 conversionSection.classList.remove('hidden');
