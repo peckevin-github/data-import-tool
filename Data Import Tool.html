@@ -1648,22 +1648,6 @@
                         <p class="text-xs text-slate-500 mt-1">Timezone of your SFCC site — auto-detected from your browser</p>
                     </div>
                 </div>
-                <script>
-                    (function() {
-                        const sel = document.getElementById('step3-site-timezone');
-                        const detected = Intl.DateTimeFormat().resolvedOptions().timeZone;
-                        // Only use saved value if the user explicitly set it (not a leftover default)
-                        const userSet = localStorage.getItem('sfcc-site-timezone-user-set') === 'true';
-                        const saved = userSet ? localStorage.getItem('sfcc-site-timezone') : null;
-                        const preferred = saved || detected;
-                        const match = Array.from(sel.options).find(o => o.value === preferred);
-                        if (match) match.selected = true;
-                        sel.addEventListener('change', () => {
-                            localStorage.setItem('sfcc-site-timezone', sel.value);
-                            localStorage.setItem('sfcc-site-timezone-user-set', 'true');
-                        });
-                    })();
-                </script>
             </div>
             
             <!-- Inventory Field (Inventory List ID) -->
@@ -1731,6 +1715,21 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // --- Timezone selector init ---
+            const tzSel = document.getElementById('step3-site-timezone');
+            if (tzSel) {
+                const detected = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                const userSet = localStorage.getItem('sfcc-site-timezone-user-set') === 'true';
+                const saved = userSet ? localStorage.getItem('sfcc-site-timezone') : null;
+                const preferred = saved || detected;
+                const match = Array.from(tzSel.options).find(o => o.value === preferred);
+                if (match) match.selected = true;
+                tzSel.addEventListener('change', () => {
+                    localStorage.setItem('sfcc-site-timezone', tzSel.value);
+                    localStorage.setItem('sfcc-site-timezone-user-set', 'true');
+                });
+            }
+
             // --- DOM Elements ---
             const objectTypeRadios = document.querySelectorAll('input[name="objectType"]');
             const attributeSection = document.getElementById('attribute-section');
