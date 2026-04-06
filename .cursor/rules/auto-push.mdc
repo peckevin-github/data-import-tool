@@ -1,0 +1,19 @@
+---
+alwaysApply: true
+---
+# Auto-Push to GitHub
+
+After making any changes to files in this repo, always stage, commit, and push them to GitHub without being asked.
+
+Use this exact working directory for all git commands:
+```
+/Users/kevin.peck/Library/CloudStorage/GoogleDrive-kevin.peck@salesforce.com/My Drive/GitHub/data-import-tool
+```
+
+Run the following after every set of changes:
+```bash
+cd "/Users/kevin.peck/Library/CloudStorage/GoogleDrive-kevin.peck@salesforce.com/My Drive/GitHub/data-import-tool" && git add -A && git commit -m "<short description of changes>" && git push origin main
+```
+
+- Write a clear, concise commit message describing what was changed and why
+- Do this automatically — do not ask the user if they want to push
