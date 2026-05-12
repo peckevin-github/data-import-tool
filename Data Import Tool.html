@@ -4635,6 +4635,15 @@
                             }
                         });
                         
+                        // Sort standard elements according to schema order (same as standard Product handler)
+                        standardElements.sort((a, b) => {
+                            const orderA = currentElementOrder.indexOf(a.elementName);
+                            const orderB = currentElementOrder.indexOf(b.elementName);
+                            const indexA = orderA === -1 ? 9999 : orderA;
+                            const indexB = orderB === -1 ? 9999 : orderB;
+                            return indexA - indexB;
+                        });
+
                         // Add standard elements
                         standardElements.forEach(elem => {
                             let elementAttributes = '';
