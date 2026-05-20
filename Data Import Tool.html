@@ -2101,6 +2101,7 @@
 
             // --- Saved Configurations ---
             const CONFIGS_STORAGE_KEY = 'sfcc-import-saved-configs';
+            const LAST_RAN_STORAGE_KEY = 'sfcc-import-last-ran';
 
             const getSavedConfigs = () => {
                 try {
@@ -2205,12 +2206,39 @@
                 // For 'simple' type, selecting the radio is sufficient
             };
 
+            const saveLastRan = () => {
+                if (!currentObjectType) return;
+                try {
+                    const lastRan = JSON.parse(localStorage.getItem(LAST_RAN_STORAGE_KEY) || '{}');
+                    lastRan[currentObjectType] = captureCurrentState();
+                    localStorage.setItem(LAST_RAN_STORAGE_KEY, JSON.stringify(lastRan));
+                } catch (e) {}
+            };
+
+            const getLastRan = (objectType) => {
+                try {
+                    const lastRan = JSON.parse(localStorage.getItem(LAST_RAN_STORAGE_KEY) || '{}');
+                    return lastRan[objectType] || null;
+                } catch (e) {
+                    return null;
+                }
+            };
+
             const renderSavedConfigsPanel = () => {
                 if (!currentObjectType) return;
                 const configs = getSavedConfigs().filter(c => c.objectType === currentObjectType);
-                if (configs.length > 0) {
+                const lastRan = getLastRan(currentObjectType);
+                const hasAnything = configs.length > 0 || lastRan;
+
+                if (hasAnything) {
                     loadConfigSection.classList.remove('hidden');
-                    savedConfigsSelect.innerHTML = configs
+                    const lastRanOption = lastRan
+                        ? `<option value="__last_ran__">↩ Last Ran</option>`
+                        : '';
+                    const divider = lastRan && configs.length > 0
+                        ? `<option disabled>──────────────</option>`
+                        : '';
+                    savedConfigsSelect.innerHTML = lastRanOption + divider + configs
                         .map(c => `<option value="${c.id}">${c.name.replace(/"/g, '&quot;')}</option>`)
                         .join('');
                 } else {
@@ -6007,6 +6035,15 @@
                 }
             });
             productSetsStandardAttributes.addEventListener('change', (e) => { if (e.target.type === 'checkbox') handleProductSetsAttributeToggle(e.target.value, e.target.checked); });
+            // Auto-save "Last Ran" whenever any generate button inside Step 2 is clicked
+            attributeSection.addEventListener('click', (e) => {
+                const btn = e.target.closest('button');
+                if (btn && btn.id && btn.id.startsWith('generate-')) {
+                    saveLastRan();
+                    renderSavedConfigsPanel();
+                }
+            });
+
             generateSheetBtn.addEventListener('click', generateCSV);
             generateVariationCsvBtn.addEventListener('click', generateVariationMappingCSV);
             generateProductRecommendationCsvBtn.addEventListener('click', generateProductRecommendationCSV);
@@ -6095,6 +6132,17 @@
             loadConfigBtn.addEventListener('click', () => {
                 const selectedId = savedConfigsSelect.value;
                 if (!selectedId) return;
+
+                if (selectedId === '__last_ran__') {
+                    const state = getLastRan(currentObjectType);
+                    if (state) {
+                        applyConfigState({ objectType: currentObjectType, state });
+                        renderSavedConfigsPanel();
+                        showConfigMsg('Last Ran configuration loaded.');
+                    }
+                    return;
+                }
+
                 const config = getSavedConfigs().find(c => c.id === selectedId);
                 if (config) {
                     applyConfigState(config);
@@ -6103,9 +6151,14 @@
                 }
             });
 
+            savedConfigsSelect.addEventListener('change', () => {
+                deleteConfigBtn.style.visibility =
+                    savedConfigsSelect.value === '__last_ran__' ? 'hidden' : 'visible';
+            });
+
             deleteConfigBtn.addEventListener('click', () => {
                 const selectedId = savedConfigsSelect.value;
-                if (!selectedId) return;
+                if (!selectedId || selectedId === '__last_ran__') return;
                 const configs = getSavedConfigs();
                 const idx = configs.findIndex(c => c.id === selectedId);
                 if (idx >= 0) {
