@@ -3607,15 +3607,24 @@
                         return value;
                     
                     case 'Date+Time':
-                        // Ensure ISO format if possible, otherwise return as-is
+                        // Emit without timezone designator so SFCC treats it as site-local time.
                         try {
-                            const date = new Date(value);
-                            if (!isNaN(date.getTime())) {
-                                return date.toISOString();
+                            const trimmedDT = value.trim();
+                            // Date-only → append midnight, no timezone
+                            if (/^\d{4}-\d{2}-\d{2}$/.test(trimmedDT)) {
+                                return `${trimmedDT}T00:00:00.000`;
                             }
-                        } catch (e) {
-                            // If parsing fails, return original value
-                        }
+                            // Already has time but no timezone → return as-is
+                            if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(trimmedDT) &&
+                                !/Z$|[+-]\d{2}:\d{2}$/.test(trimmedDT)) {
+                                return trimmedDT;
+                            }
+                            // Has a timezone designator → strip it so BM uses site-local time
+                            const date = new Date(trimmedDT);
+                            if (!isNaN(date.getTime())) {
+                                return date.toISOString().replace('Z', '');
+                            }
+                        } catch (e) {}
                         return value;
                     
                     case 'Number':
@@ -4438,17 +4447,10 @@
                         // Read the site timezone from the dropdown (IANA name, e.g. "America/New_York")
                         const siteTimezone = (document.getElementById('step3-site-timezone') || {}).value || 'UTC';
 
-                        // Convert a YYYY-MM-DD string to a UTC ISO string representing midnight in siteTimezone.
-                        // Uses noon UTC as a DST-safe reference to calculate the exact offset for that date.
-                        const localMidnightToISO = (dateStr) => {
-                            const [year, month, day] = dateStr.split('-').map(Number);
-                            const noonUTC = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
-                            // sv-SE locale gives "YYYY-MM-DD HH:MM:SS" — reliable cross-browser
-                            const localNoonStr = noonUTC.toLocaleString('sv-SE', { timeZone: siteTimezone });
-                            const localNoon = new Date(localNoonStr.replace(' ', 'T') + 'Z');
-                            const offsetMs = noonUTC.getTime() - localNoon.getTime();
-                            return new Date(Date.UTC(year, month - 1, day, 0, 0, 0) + offsetMs).toISOString();
-                        };
+                        // Emit as a timezone-naive ISO datetime so SFCC treats it as site-local midnight.
+                        // No UTC conversion needed — BM interprets datetimes without a timezone
+                        // designator in the site's configured timezone.
+                        const localMidnightToISO = (dateStr) => `${dateStr}T00:00:00.000`;
 
                         // Helper function to parse various date formats and convert to ISO format
                         const parseAndFormatDate = (dateStr) => {
@@ -4498,7 +4500,8 @@
                             try {
                                 const date = new Date(trimmed);
                                 if (!isNaN(date.getTime())) {
-                                    return date.toISOString();
+                                    // Strip Z so SFCC treats it as site-local time
+                                    return date.toISOString().replace('Z', '');
                                 }
                             } catch (e) {
                                 console.warn(`Could not parse date: ${trimmed}`);
