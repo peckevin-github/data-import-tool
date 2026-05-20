@@ -2788,6 +2788,9 @@
             };
 
             const generateCSV = () => {
+                saveLastRan();
+                renderSavedConfigsPanel();
+
                 // Special handling for Coupon Code - no attributes needed
                 if (currentObjectType === 'CouponCode') {
                     const headers = ['Coupon Code'];
@@ -2969,6 +2972,9 @@
             };
 
             const generateProductSetsCSV = () => {
+                saveLastRan();
+                renderSavedConfigsPanel();
+
                 // Base header - only Product Set ID
                 const headers = ['Product Set ID'];
                 
@@ -6035,30 +6041,23 @@
                 }
             });
             productSetsStandardAttributes.addEventListener('change', (e) => { if (e.target.type === 'checkbox') handleProductSetsAttributeToggle(e.target.value, e.target.checked); });
-            // Auto-save "Last Ran" whenever any generate button inside Step 2 is clicked
-            attributeSection.addEventListener('click', (e) => {
-                const btn = e.target.closest('button');
-                if (btn && btn.id && btn.id.startsWith('generate-')) {
-                    saveLastRan();
-                    renderSavedConfigsPanel();
-                }
-            });
-
             generateSheetBtn.addEventListener('click', generateCSV);
-            generateVariationCsvBtn.addEventListener('click', generateVariationMappingCSV);
-            generateProductRecommendationCsvBtn.addEventListener('click', generateProductRecommendationCSV);
-            generateCategoryAssignmentCsvBtn.addEventListener('click', generateCategoryAssignmentCSV);
-            generateCategoryPositionCsvBtn.addEventListener('click', generateCategoryPositionCSV);
-            generateCategoryAssignmentRulesCsvBtn.addEventListener('click', generateCategoryAssignmentRulesCSV);
-            generateRefinementDefinitionsExcelBtn.addEventListener('click', generateRefinementDefinitionsExcel);
-            generateImageMappingCsvBtn.addEventListener('click', generateImageMappingCSV);
-            generateVariationGroupCsvBtn.addEventListener('click', generateVariationGroupCSV);
-            generatePricesCsvBtn.addEventListener('click', generatePricesCSV);
-            generateInventoryCsvBtn.addEventListener('click', generateInventoryCSV);
-            generateCouponCodeCsvBtn.addEventListener('click', generateCSV);
-            generateUrlRulesCsvBtn.addEventListener('click', generateUrlRulesCSV);
-            generateLibraryFolderCsvBtn.addEventListener('click', generateLibraryFolderCSV);
-            generateStaticCustomerGroupCsvBtn.addEventListener('click', generateStaticCustomerGroupCSV);
+            // Wrap each simple generate function so Last Ran is always saved on generation
+            const withLastRan = (fn) => () => { saveLastRan(); fn(); renderSavedConfigsPanel(); };
+            generateVariationCsvBtn.addEventListener('click', withLastRan(generateVariationMappingCSV));
+            generateProductRecommendationCsvBtn.addEventListener('click', withLastRan(generateProductRecommendationCSV));
+            generateCategoryAssignmentCsvBtn.addEventListener('click', withLastRan(generateCategoryAssignmentCSV));
+            generateCategoryPositionCsvBtn.addEventListener('click', withLastRan(generateCategoryPositionCSV));
+            generateCategoryAssignmentRulesCsvBtn.addEventListener('click', withLastRan(generateCategoryAssignmentRulesCSV));
+            generateRefinementDefinitionsExcelBtn.addEventListener('click', withLastRan(generateRefinementDefinitionsExcel));
+            generateImageMappingCsvBtn.addEventListener('click', withLastRan(generateImageMappingCSV));
+            generateVariationGroupCsvBtn.addEventListener('click', withLastRan(generateVariationGroupCSV));
+            generatePricesCsvBtn.addEventListener('click', withLastRan(generatePricesCSV));
+            generateInventoryCsvBtn.addEventListener('click', withLastRan(generateInventoryCSV));
+            generateCouponCodeCsvBtn.addEventListener('click', withLastRan(generateCSV));
+            generateUrlRulesCsvBtn.addEventListener('click', withLastRan(generateUrlRulesCSV));
+            generateLibraryFolderCsvBtn.addEventListener('click', withLastRan(generateLibraryFolderCSV));
+            generateStaticCustomerGroupCsvBtn.addEventListener('click', withLastRan(generateStaticCustomerGroupCSV));
             generateProductSetsCsvBtn.addEventListener('click', generateProductSetsCSV);
             addProductSetsRowBtn.addEventListener('click', () => addProductSetsTableRow());
             clearProductSetsTableBtn.addEventListener('click', clearProductSetsCustomAttributesTable);
