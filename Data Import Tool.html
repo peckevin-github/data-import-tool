@@ -172,40 +172,6 @@
         <main id="attribute-section" class="max-w-4xl mx-auto bg-white p-6 md:p-8 rounded-2xl shadow-lg border border-slate-200 hidden fade-in mb-8">
             <h2 class="text-2xl font-bold mb-6 text-slate-900">Step 2. Generate CSV Template</h2>
 
-            <!-- Saved Configurations Panel -->
-            <div id="saved-configs-panel" class="mb-6 p-4 bg-amber-50 rounded-lg border border-amber-200">
-                <div class="flex items-center gap-2 mb-3">
-                    <svg class="w-4 h-4 text-amber-700 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-                    </svg>
-                    <h3 class="text-sm font-semibold text-amber-900">Saved Configurations</h3>
-                </div>
-                <!-- Load existing configs (shown only when saved configs exist for the current import type) -->
-                <div id="load-config-section" class="hidden mb-3 pb-3 border-b border-amber-200">
-                    <p class="text-xs text-amber-700 mb-2">Load a saved configuration for this import type:</p>
-                    <div class="flex flex-wrap items-center gap-2">
-                        <select id="saved-configs-select" class="flex-1 min-w-0 px-3 py-1.5 text-sm bg-white border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500">
-                        </select>
-                        <button id="load-config-btn" class="px-3 py-1.5 bg-amber-600 text-white text-sm font-medium rounded-md hover:bg-amber-700 transition-colors flex-shrink-0">
-                            Load
-                        </button>
-                        <button id="delete-config-btn" class="px-3 py-1.5 bg-white text-red-600 border border-red-200 text-sm font-medium rounded-md hover:bg-red-50 transition-colors flex-shrink-0">
-                            Delete
-                        </button>
-                    </div>
-                </div>
-                <!-- Save current config -->
-                <div class="flex flex-wrap items-center gap-2">
-                    <input type="text" id="save-config-name" placeholder="Name this configuration…"
-                           class="flex-1 min-w-0 px-3 py-1.5 text-sm bg-white border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500">
-                    <button id="save-config-btn" class="px-3 py-1.5 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors flex-shrink-0 whitespace-nowrap">
-                        Save Configuration
-                    </button>
-                </div>
-                <!-- Feedback message -->
-                <div id="save-config-msg" class="hidden mt-2 text-xs font-medium rounded px-2 py-1"></div>
-            </div>
-
             <!-- Collapsible Help Section for Product Attributes -->
             <div id="product-attributes-help" class="mb-6 hidden">
                 <div class="bg-blue-50 rounded-lg border border-blue-200">
@@ -215,7 +181,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                         </svg>
                     </button>
-                    <div class="help-content p-4 pt-0">
+                    <div class="help-content p-4 pt-0 hidden">
                         <p class="text-sm text-blue-800 mb-3">Follow these steps to create your product import CSV:</p>
                         <ol class="text-sm text-blue-800 space-y-2 ml-4 list-decimal">
                             <li><strong>Select attributes:</strong> Choose standard attributes from the left column and/or add custom attributes using the table</li>
@@ -240,7 +206,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                         </svg>
                     </button>
-                    <div class="help-content p-4 pt-0">
+                    <div class="help-content p-4 pt-0 hidden">
                         <p class="text-sm text-blue-800 mb-3">Follow these steps to create your category import CSV:</p>
                         <ol class="text-sm text-blue-800 space-y-2 ml-4 list-decimal">
                             <li><strong>Select attributes:</strong> Choose standard attributes from the left column and/or add custom attributes using the table</li>
@@ -265,7 +231,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                         </svg>
                     </button>
-                    <div class="help-content p-4 pt-0">
+                    <div class="help-content p-4 pt-0 hidden">
                         <p class="text-sm text-blue-800 mb-3">These manual product recommendation types are <strong>not Einstein Product Recommendations</strong>, but rather a manual alternative to Einstein for creating custom product relationships.</p>
                         <div class="space-y-2 mt-3">
                             <div class="bg-white p-3 rounded border border-blue-200">
@@ -309,7 +275,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                         </svg>
                     </button>
-                    <div class="help-content p-4 pt-0">
+                    <div class="help-content p-4 pt-0 hidden">
                         <ul class="text-sm text-blue-700 space-y-1">
                             <li>• <strong>Each row</strong> represents one variant product</li>
                             <li>• <strong>Columns A & B (Required):</strong> Variation Product ID and Base Product ID</li>
@@ -333,7 +299,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                         </svg>
                     </button>
-                    <div class="help-content p-4 pt-0">
+                    <div class="help-content p-4 pt-0 hidden">
                         <ul class="text-sm text-blue-700 space-y-1">
                             <li>• <strong>Each row</strong> represents one coupon code</li>
                             <li>• <strong>Simple structure:</strong> CSV contains just one column - "Coupon Code"</li>
@@ -354,7 +320,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                         </svg>
                     </button>
-                    <div class="help-content p-4 pt-0">
+                    <div class="help-content p-4 pt-0 hidden">
                         <ul class="text-sm text-blue-700 space-y-1">
                             <li>• <strong>Each row</strong> represents one product-to-category assignment</li>
                             <li>• <strong>Multiple assignments</strong> per product supported - create additional rows</li>
@@ -374,7 +340,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                         </svg>
                     </button>
-                    <div class="help-content p-4 pt-0">
+                    <div class="help-content p-4 pt-0 hidden">
                         <p class="text-sm text-blue-800 mb-3">Bulk change product positions within categories. Each row represents one product's position in a category.</p>
                         
                         <div class="bg-white p-3 rounded border border-blue-200 mb-2">
@@ -399,7 +365,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                         </svg>
                     </button>
-                    <div class="help-content p-4 pt-0">
+                    <div class="help-content p-4 pt-0 hidden">
                         <ul class="text-sm text-blue-700 space-y-1">
                             <li>• <strong>Each row</strong> represents one product and its associated images</li>
                             <li>• <strong>Variation Group or Variation Master ID</strong> required</li>
@@ -419,7 +385,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                         </svg>
                     </button>
-                    <div class="help-content p-4 pt-0">
+                    <div class="help-content p-4 pt-0 hidden">
                         <ul class="text-sm text-blue-700 space-y-1">
                             <li>• <strong>Each row</strong> represents one variation group attribute definition</li>
                             <li>• <strong>Variation Attribute ID</strong> is required (e.g., "color", "size")</li>
@@ -438,7 +404,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                         </svg>
                     </button>
-                    <div class="help-content p-4 pt-0">
+                    <div class="help-content p-4 pt-0 hidden">
                         <ul class="text-sm text-blue-700 space-y-1 mb-3">
                             <li>• <strong>Each row</strong> represents one product's price</li>
                             <li>• <strong>Product ID and Price</strong> are required</li>
@@ -472,7 +438,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                         </svg>
                     </button>
-                    <div class="help-content p-4 pt-0">
+                    <div class="help-content p-4 pt-0 hidden">
                         <ul class="text-sm text-blue-700 space-y-1 mb-3">
                             <li>• <strong>Product ID</strong> is required</li>
                             <li>• <strong>Allocation</strong> is optional - defaults to 0 if blank (useful for perpetual inventory)</li>
@@ -500,7 +466,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                         </svg>
                     </button>
-                    <div class="help-content p-4 pt-0">
+                    <div class="help-content p-4 pt-0 hidden">
                         <ul class="text-sm text-blue-700 space-y-1">
                             <li>• <strong>Each row</strong> represents one content asset</li>
                             <li>• <strong>Asset ID and Library ID</strong> are required</li>
@@ -520,7 +486,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                         </svg>
                     </button>
-                    <div class="help-content p-4 pt-0">
+                    <div class="help-content p-4 pt-0 hidden">
                         <ul class="text-sm text-blue-700 space-y-1 mb-3">
                             <li>• <strong>Each row</strong> represents one library folder</li>
                             <li>• <strong>Folder ID and Library ID</strong> are required</li>
@@ -548,7 +514,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                         </svg>
                     </button>
-                    <div class="help-content p-4 pt-0">
+                    <div class="help-content p-4 pt-0 hidden">
                         <ul class="text-sm text-blue-700 space-y-1 mb-3">
                             <li>• <strong>Each row</strong> represents one customer to add to the group</li>
                             <li>• <strong>Customer Group ID</strong> must be specified in the configuration</li>
@@ -571,7 +537,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                         </svg>
                     </button>
-                    <div class="help-content p-4 pt-0">
+                    <div class="help-content p-4 pt-0 hidden">
                         <ul class="text-sm text-blue-700 space-y-1 mb-3">
                             <li>• <strong>Each row</strong> represents one product set and its member products</li>
                             <li>• <strong>Product Set ID</strong> (Column A) is required</li>
@@ -596,7 +562,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                         </svg>
                     </button>
-                    <div class="help-content p-4 pt-0">
+                    <div class="help-content p-4 pt-0 hidden">
                         <ul class="text-sm text-blue-700 space-y-1">
                             <li>• <strong>Each row</strong> represents one customer record</li>
                             <li>• <strong>Select attributes:</strong> Choose standard customer attributes and/or add custom attributes</li>
@@ -607,6 +573,40 @@
                 </div>
             </div>
             
+            <!-- Saved Configurations Panel -->
+            <div id="saved-configs-panel" class="mb-6 p-4 bg-amber-50 rounded-lg border border-amber-200">
+                <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-4 h-4 text-amber-700 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                    </svg>
+                    <h3 class="text-sm font-semibold text-amber-900">Saved Configurations</h3>
+                </div>
+                <!-- Load existing configs (shown only when saved configs exist for the current import type) -->
+                <div id="load-config-section" class="hidden mb-3 pb-3 border-b border-amber-200">
+                    <p class="text-xs text-amber-700 mb-2">Load a saved configuration for this import type:</p>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <select id="saved-configs-select" class="flex-1 min-w-0 px-3 py-1.5 text-sm bg-white border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500">
+                        </select>
+                        <button id="load-config-btn" class="px-3 py-1.5 bg-amber-600 text-white text-sm font-medium rounded-md hover:bg-amber-700 transition-colors flex-shrink-0">
+                            Load
+                        </button>
+                        <button id="delete-config-btn" class="px-3 py-1.5 bg-white text-red-600 border border-red-200 text-sm font-medium rounded-md hover:bg-red-50 transition-colors flex-shrink-0">
+                            Delete
+                        </button>
+                    </div>
+                </div>
+                <!-- Save current config -->
+                <div class="flex flex-wrap items-center gap-2">
+                    <input type="text" id="save-config-name" placeholder="Name this configuration…"
+                           class="flex-1 min-w-0 px-3 py-1.5 text-sm bg-white border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500">
+                    <button id="save-config-btn" class="px-3 py-1.5 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors flex-shrink-0 whitespace-nowrap">
+                        Save Configuration
+                    </button>
+                </div>
+                <!-- Feedback message -->
+                <div id="save-config-msg" class="hidden mt-2 text-xs font-medium rounded px-2 py-1"></div>
+            </div>
+
             <!-- Locale Selection -->
             <div id="locale-section" class="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
                 <div class="flex items-center space-x-3 mb-3">
@@ -2464,9 +2464,13 @@
                     // Convert to XML element name for display if it's a standard attribute (and not custom)
                     const displayName = isCustom ? attr : convertToXmlElementName(attr);
                     
-                    // Determine if site-specific option should be shown
-                    // Category standard attributes do NOT support site-id in the SFCC schema
-                    const showSiteSpecific = currentObjectType !== 'Category';
+                    // Determine if site-specific option should be shown.
+                    // Category standard attributes never support site-id in the SFCC schema.
+                    // For other types, only show the option for custom attributes or standard attributes
+                    // that are explicitly in the siteSpecificAttributes list (e.g. onlineFlag, searchRank).
+                    // Standard localizable-only attributes like displayName are NOT site-specific.
+                    const showSiteSpecific = currentObjectType !== 'Category' &&
+                        (isCustom || siteSpecificAttributes.includes(attr));
                     
                     // Build the content with checkboxes
                     div.innerHTML = `
