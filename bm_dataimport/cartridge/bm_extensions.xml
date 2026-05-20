@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extensions xmlns="http://www.demandware.com/xml/screen-extensions/2006-03-01">
+    <extension
+        id="bm-dataimport"
+        menubar="merchant-tools"
+        position="100">
+        <menu-item
+            action="DataImport-Start"
+            id="data-import-tool"
+            site="true">
+            <name xml:lang="x-default">Data Import Tool</name>
+        </menu-item>
+        <subpipelines>
+            <pipeline name="DataImport-Start"/>
+            <pipeline name="DataImport-GetAttributes"/>
+        </subpipelines>
+    </extension>
+</extensions>
