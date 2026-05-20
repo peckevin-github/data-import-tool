@@ -171,7 +171,41 @@
         <!-- Step 2: Define Attributes (CSV Generation) -->
         <main id="attribute-section" class="max-w-4xl mx-auto bg-white p-6 md:p-8 rounded-2xl shadow-lg border border-slate-200 hidden fade-in mb-8">
             <h2 class="text-2xl font-bold mb-6 text-slate-900">Step 2. Generate CSV Template</h2>
-            
+
+            <!-- Saved Configurations Panel -->
+            <div id="saved-configs-panel" class="mb-6 p-4 bg-amber-50 rounded-lg border border-amber-200">
+                <div class="flex items-center gap-2 mb-3">
+                    <svg class="w-4 h-4 text-amber-700 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                    </svg>
+                    <h3 class="text-sm font-semibold text-amber-900">Saved Configurations</h3>
+                </div>
+                <!-- Load existing configs (shown only when saved configs exist for the current import type) -->
+                <div id="load-config-section" class="hidden mb-3 pb-3 border-b border-amber-200">
+                    <p class="text-xs text-amber-700 mb-2">Load a saved configuration for this import type:</p>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <select id="saved-configs-select" class="flex-1 min-w-0 px-3 py-1.5 text-sm bg-white border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500">
+                        </select>
+                        <button id="load-config-btn" class="px-3 py-1.5 bg-amber-600 text-white text-sm font-medium rounded-md hover:bg-amber-700 transition-colors flex-shrink-0">
+                            Load
+                        </button>
+                        <button id="delete-config-btn" class="px-3 py-1.5 bg-white text-red-600 border border-red-200 text-sm font-medium rounded-md hover:bg-red-50 transition-colors flex-shrink-0">
+                            Delete
+                        </button>
+                    </div>
+                </div>
+                <!-- Save current config -->
+                <div class="flex flex-wrap items-center gap-2">
+                    <input type="text" id="save-config-name" placeholder="Name this configuration…"
+                           class="flex-1 min-w-0 px-3 py-1.5 text-sm bg-white border border-amber-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500">
+                    <button id="save-config-btn" class="px-3 py-1.5 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors flex-shrink-0 whitespace-nowrap">
+                        Save Configuration
+                    </button>
+                </div>
+                <!-- Feedback message -->
+                <div id="save-config-msg" class="hidden mt-2 text-xs font-medium rounded px-2 py-1"></div>
+            </div>
+
             <!-- Collapsible Help Section for Product Attributes -->
             <div id="product-attributes-help" class="mb-6 hidden">
                 <div class="bg-blue-50 rounded-lg border border-blue-200">
@@ -1859,6 +1893,14 @@
             const dropZoneText = document.getElementById('drop-zone-text');
             const conversionStatus = document.getElementById('conversion-status');
             const generateXmlBtn = document.getElementById('generate-xml-btn');
+            const savedConfigsPanel = document.getElementById('saved-configs-panel');
+            const loadConfigSection = document.getElementById('load-config-section');
+            const savedConfigsSelect = document.getElementById('saved-configs-select');
+            const loadConfigBtn = document.getElementById('load-config-btn');
+            const deleteConfigBtn = document.getElementById('delete-config-btn');
+            const saveConfigNameInput = document.getElementById('save-config-name');
+            const saveConfigBtn = document.getElementById('save-config-btn');
+            const saveConfigMsg = document.getElementById('save-config-msg');
             
             // --- Attribute Data ---
             const attributeData = {};
@@ -2056,7 +2098,133 @@
             let parsedCsvData = null;
             let productSetsCustomAttributes = []; // Store custom attributes for Product Sets
             let productSetsSelectedAttributes = new Set(); // Store selected standard attributes for Product Sets
-            
+
+            // --- Saved Configurations ---
+            const CONFIGS_STORAGE_KEY = 'sfcc-import-saved-configs';
+
+            const getSavedConfigs = () => {
+                try {
+                    return JSON.parse(localStorage.getItem(CONFIGS_STORAGE_KEY) || '[]');
+                } catch (e) {
+                    return [];
+                }
+            };
+
+            const setSavedConfigs = (configs) => {
+                localStorage.setItem(CONFIGS_STORAGE_KEY, JSON.stringify(configs));
+            };
+
+            const captureCurrentState = () => {
+                const state = {};
+
+                if (['Product', 'Category', 'Customer', 'ContentAsset'].includes(currentObjectType)) {
+                    state.type = 'attribute-based';
+                    state.selectedAttributes = Array.from(selectedAttributes);
+                    state.attributeFlags = JSON.parse(JSON.stringify(attributeFlags));
+                    // Custom attributes are those in selectedAttributes that also appear in customAttributeTypes
+                    state.customAttributes = Array.from(selectedAttributes)
+                        .filter(attr => customAttributeTypes[attr])
+                        .map(attr => ({
+                            name: attr,
+                            type: customAttributeTypes[attr],
+                            localizable: attributeFlags[attr]?.localizable || false,
+                            siteSpecific: attributeFlags[attr]?.siteSpecific || false
+                        }));
+                    state.locale = localeInputGlobal.value;
+                    state.siteId = siteIdInputGlobal.value;
+                } else if (currentObjectType === 'ProductSets') {
+                    state.type = 'product-sets';
+                    state.selectedAttributes = Array.from(productSetsSelectedAttributes);
+                    state.attributeFlags = JSON.parse(JSON.stringify(attributeFlags));
+                    state.customAttributes = productSetsCustomAttributes.map(a => ({ ...a }));
+                    state.locale = productSetsLocaleInput.value;
+                    state.siteId = productSetsSiteInput.value;
+                } else {
+                    state.type = 'simple';
+                }
+
+                return state;
+            };
+
+            const applyConfigState = (config) => {
+                // Select the radio button — this triggers the change event which resets all state
+                const radio = document.querySelector(`input[name="objectType"][value="${config.objectType}"]`);
+                if (radio) {
+                    radio.checked = true;
+                    radio.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+
+                const state = config.state;
+                if (!state) return;
+
+                if (state.type === 'attribute-based') {
+                    // Re-apply standard attributes
+                    if (state.selectedAttributes && currentStandardAttributes) {
+                        state.selectedAttributes.forEach(attr => {
+                            if (currentStandardAttributes[attr]) {
+                                selectedAttributes.add(attr);
+                            }
+                        });
+                    }
+                    // Re-apply custom attributes
+                    if (state.customAttributes) {
+                        state.customAttributes.forEach(ca => {
+                            selectedAttributes.add(ca.name);
+                            customAttributeTypes[ca.name] = ca.type;
+                        });
+                    }
+                    // Re-apply attribute flags
+                    if (state.attributeFlags) {
+                        Object.assign(attributeFlags, JSON.parse(JSON.stringify(state.attributeFlags)));
+                    }
+                    // Re-apply locale and site ID
+                    if (state.locale !== undefined) localeInputGlobal.value = state.locale;
+                    if (state.siteId !== undefined) siteIdInputGlobal.value = state.siteId;
+
+                    renderStandardAttributes();
+                    renderSelectedAttributes();
+                    updateLocaleAndSiteSections();
+
+                } else if (state.type === 'product-sets') {
+                    if (state.selectedAttributes) {
+                        state.selectedAttributes.forEach(attr => productSetsSelectedAttributes.add(attr));
+                    }
+                    if (state.attributeFlags) {
+                        Object.assign(attributeFlags, JSON.parse(JSON.stringify(state.attributeFlags)));
+                    }
+                    if (state.customAttributes) {
+                        productSetsCustomAttributes = state.customAttributes.map(a => ({ ...a }));
+                    }
+                    if (state.locale !== undefined) productSetsLocaleInput.value = state.locale;
+                    if (state.siteId !== undefined) productSetsSiteInput.value = state.siteId;
+
+                    renderProductSetsStandardAttributes();
+                    renderProductSetsSelectedColumns();
+                    updateProductSetsLocaleAndSiteSections();
+                }
+                // For 'simple' type, selecting the radio is sufficient
+            };
+
+            const renderSavedConfigsPanel = () => {
+                if (!currentObjectType) return;
+                const configs = getSavedConfigs().filter(c => c.objectType === currentObjectType);
+                if (configs.length > 0) {
+                    loadConfigSection.classList.remove('hidden');
+                    savedConfigsSelect.innerHTML = configs
+                        .map(c => `<option value="${c.id}">${c.name.replace(/"/g, '&quot;')}</option>`)
+                        .join('');
+                } else {
+                    loadConfigSection.classList.add('hidden');
+                }
+            };
+
+            const showConfigMsg = (text, isError = false) => {
+                saveConfigMsg.textContent = text;
+                saveConfigMsg.className = `mt-2 text-xs font-medium rounded px-2 py-1 ${isError ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`;
+                saveConfigMsg.classList.remove('hidden');
+                setTimeout(() => saveConfigMsg.classList.add('hidden'), 3000);
+            };
+
             // Site-specific attributes for Products
             const siteSpecificAttributes = [
                 'facebookEnabled',
@@ -5784,6 +5952,9 @@
                 conversionStatus.textContent = 'Ready to convert.';
                 conversionStatus.classList.remove('text-red-500');
                 generateXmlBtn.disabled = true;
+
+                // Refresh the saved configs dropdown for the newly selected import type
+                renderSavedConfigsPanel();
                 });
             });
 
@@ -5882,7 +6053,59 @@
             });
             fileDropZone.addEventListener('drop', (e) => handleFileSelect(e.dataTransfer.files[0]));
             generateXmlBtn.addEventListener('click', generateXML);
-            
+
+            // --- Saved Configurations Listeners ---
+            saveConfigBtn.addEventListener('click', () => {
+                const name = saveConfigNameInput.value.trim();
+                if (!name) {
+                    showConfigMsg('Please enter a name for this configuration.', true);
+                    saveConfigNameInput.focus();
+                    return;
+                }
+                if (!currentObjectType) {
+                    showConfigMsg('Please select an import type first.', true);
+                    return;
+                }
+                const configs = getSavedConfigs();
+                const newConfig = {
+                    id: Date.now().toString(),
+                    name,
+                    objectType: currentObjectType,
+                    createdAt: new Date().toISOString(),
+                    state: captureCurrentState()
+                };
+                configs.push(newConfig);
+                setSavedConfigs(configs);
+                saveConfigNameInput.value = '';
+                renderSavedConfigsPanel();
+                showConfigMsg(`"${name}" saved successfully.`);
+            });
+
+            loadConfigBtn.addEventListener('click', () => {
+                const selectedId = savedConfigsSelect.value;
+                if (!selectedId) return;
+                const config = getSavedConfigs().find(c => c.id === selectedId);
+                if (config) {
+                    applyConfigState(config);
+                    renderSavedConfigsPanel();
+                    showConfigMsg(`"${config.name}" loaded.`);
+                }
+            });
+
+            deleteConfigBtn.addEventListener('click', () => {
+                const selectedId = savedConfigsSelect.value;
+                if (!selectedId) return;
+                const configs = getSavedConfigs();
+                const idx = configs.findIndex(c => c.id === selectedId);
+                if (idx >= 0) {
+                    const deletedName = configs[idx].name;
+                    configs.splice(idx, 1);
+                    setSavedConfigs(configs);
+                    renderSavedConfigsPanel();
+                    showConfigMsg(`"${deletedName}" deleted.`);
+                }
+            });
+
             // --- Initial State ---
             generateSheetBtn.disabled = true;
             generateXmlBtn.disabled = true;
